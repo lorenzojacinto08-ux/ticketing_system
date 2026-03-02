@@ -172,7 +172,7 @@
                                                 <form method="post"
                                                       action="{{ url_for('delete_ticket', ticket_id=(entry.ticket_no or entry.id)) }}"
                                                       style="display:inline;"
-                                                      onsubmit="return confirm('Are you sure you want to delete this ticket?');">
+                                                      onsubmit="return confirm('Are you sure you want to delete ticket #{{ entry.ticket_no or entry.id }} from {{ entry.store_name or entry.Name }}?\\n\\nSubject: {{ entry.subject or entry.Concern or entry.concern }}\\n\\nThis action cannot be undone.');">
                                                     <button type="submit"
                                                             class="icon-button icon-button-delete"
                                                             title="Delete ticket">

@@ -102,15 +102,12 @@
                       <i class="bi bi-pencil"></i> Edit
                     </a>
                     {% if u.id != session.get('user_id') %}
+                    {% set role_display = 'Super Admin' if u.role == 'super_admin' else ('Admin' if u.role == 'admin' else 'End User') %}
                     <form
                       method="post"
                       action="{{ url_for('delete_user', user_id=u.id) }}"
                       class="d-inline"
-                      onsubmit="
-                        return confirm(
-                          'Delete this user? This cannot be undone.',
-                        );
-                      "
+                      onsubmit="return confirm('Are you sure you want to delete user {{ u.first_name }} {{ u.last_name }} ({{ u.email }})?\\n\\nRole: {{ role_display }}\\n\\nThis action cannot be undone and will remove all access for this user.');"
                     >
                       <button
                         type="submit"
