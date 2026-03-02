@@ -36,7 +36,7 @@ CREATE TABLE `entries` (
   `job_order` varchar(10) DEFAULT NULL,
   PRIMARY KEY (`ticket_no`),
   UNIQUE KEY `job_order_UNIQUE` (`job_order`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -45,7 +45,7 @@ CREATE TABLE `entries` (
 
 LOCK TABLES `entries` WRITE;
 /*!40000 ALTER TABLE `entries` DISABLE KEYS */;
-INSERT INTO `entries` VALUES (14,'Llao llao',NULL,'Hardware','IT Support','2026-02-25 15:26:26','llaollao@gmail.com','Not Working POS.','pending',NULL,'jo-0001'),(15,'Jollibee','09673679257','Software','IT Support','2026-02-25 15:32:12',NULL,'Software has been buggy.','pending',NULL,'jo-0002'),(16,'Tim Ho Wan','09222222222','Defective','IT Support','2026-02-25 16:05:31',NULL,'Can\'t Open device','ongoing',NULL,'jo-0003'),(17,'Mesa',NULL,'POS','Technician 2','2026-02-25 16:08:38','Mesa@gmail.com','Card payment not working','completed',NULL,'jo-0004'),(18,'Llao llao','09344345757','Hardware','Technician 1','2026-02-27 09:37:32',NULL,'Lagging UI','pending',NULL,'jo-0005'),(19,'Pizza Hut','09332332323','Technical','Technician 1','2026-02-27 10:33:45',NULL,'hang','pending',NULL,'jo-0006'),(20,'Potato Corner','09000000000','Hardware','IT Support','2026-02-27 13:27:36',NULL,'Not. Working','pending',NULL,'jo-0007'),(21,'Black Scoop','02933333333','Hardware','IT Support','2026-02-27 13:43:38','blackscoop@gmail.com','Not Opening','pending',NULL,'jo-0008'),(22,'Siomai House','3232323223','Software','IT Support','2026-02-27 16:51:36','Siomai@gmail.com','Update needed','pending',NULL,'jo-0009'),(23,'Yellow Cab','09339993333','Unit Replacement','Technician 1','2026-02-28 09:46:32','yellowcab@gmail.com','Dead pixel on POS','pending',NULL,'jo-0010'),(24,'Llao llao','09064409887','Hardware','IT Support','2026-02-28 16:58:41',NULL,'POS is not opening','pending',NULL,'jo-0011');
+INSERT INTO `entries` VALUES (14,'Llao llao',NULL,'Hardware','IT Support','2026-02-25 15:26:26','llaollao@gmail.com','Not Working POS.','pending',NULL,'jo-0001'),(15,'Jollibee','09673679257','Software','IT Support','2026-02-25 15:32:12',NULL,'Software has been buggy.','pending',NULL,'jo-0002'),(16,'Tim Ho Wan','09222222222','Defective','IT Support','2026-02-25 16:05:31',NULL,'Can\'t Open device','ongoing',NULL,'jo-0003'),(17,'Mesa',NULL,'POS','Technician 2','2026-02-25 16:08:38','Mesa@gmail.com','Card payment not working','completed',NULL,'jo-0004'),(18,'Llao llao','09344345757','Hardware','Technician 1','2026-02-27 09:37:32',NULL,'Lagging UI','pending',NULL,'jo-0005'),(19,'Pizza Hut','09332332323','Technical','Technician 1','2026-02-27 10:33:45',NULL,'hang','pending',NULL,'jo-0006'),(20,'Potato Corner','09000000000','Hardware','IT Support','2026-02-27 13:27:36',NULL,'Not. Working','pending',NULL,'jo-0007'),(21,'Black Scoop','02933333333','Hardware','IT Support','2026-02-27 13:43:38','blackscoop@gmail.com','Not Opening','pending',NULL,'jo-0008'),(22,'Siomai House','3232323223','Software','IT Support','2026-02-27 16:51:36','Siomai@gmail.com','Update needed','pending',NULL,'jo-0009'),(23,'Yellow Cab','09339993333','Unit Replacement','Technician 1','2026-02-28 09:46:32','yellowcab@gmail.com','Dead pixel on POS','pending',NULL,'jo-0010'),(24,'Llao llao','09064409887','Hardware','IT Support','2026-02-28 16:58:41',NULL,'POS is not opening','pending',NULL,'jo-0011'),(25,'qdded','90909090','faef','Technician 1','2026-03-02 09:41:43',NULL,'esfsfr','pending',NULL,'jo-0012');
 /*!40000 ALTER TABLE `entries` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -78,7 +78,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'test2@gmail.com','scrypt:32768:8:1$PM7gZHr7j9Zx1H7l$5833eda655240a9f2c6346de53c29309233b4d61d84eb73dde4e9469c0524808beb811d7c8e721ee76a613a99ebc2ef826ae676329e92d72c1322bcb24c9018e','Test1','User','end_user','1','2026-02-25 01:59:57','2026-02-27 13:34:58'),(2,'lorenzojacinto08@gmail.com','scrypt:32768:8:1$MO3dN7fOVHoP418f$5fc5d88251a2efd878edd46144455d6af65808363f0011d62dd25234d18d73adf870688920f88ed29fe7e42fa86192b65e4aa3a51712943e57127d0828e52fdd','Test2','User','end_user','1','2026-02-27 01:50:07','2026-02-27 10:27:57'),(3,'super_admin@gmail.com','scrypt:32768:8:1$XDGg1MRXEAzjsOkp$5d8437b2cd4b144962a14d3b28bc6da4e82be6aee0552a76cd194bc14c7ae92038414822b161d025a272edea2f2372da4086d3f1687837fdfde4839996c6b79e','Super','Admin','super_admin','1','2026-02-27 02:13:38','2026-03-02 09:27:11'),(4,'user1@gmail.com','scrypt:32768:8:1$HGlTLdpSRZWCVtBh$bd7fce6c42678416e040342a93cc7c6206972a19ac219aefb17f447e086a83c51528425f0388e3413144ae177c13da0b0e580388a47f5a7fd11260752791a10c','User1','Test','admin','1','2026-02-27 03:56:12','2026-02-27 14:17:45');
+INSERT INTO `users` VALUES (1,'test2@gmail.com','scrypt:32768:8:1$PM7gZHr7j9Zx1H7l$5833eda655240a9f2c6346de53c29309233b4d61d84eb73dde4e9469c0524808beb811d7c8e721ee76a613a99ebc2ef826ae676329e92d72c1322bcb24c9018e','Test1','User','end_user','1','2026-02-25 01:59:57','2026-02-27 13:34:58'),(2,'lorenzojacinto08@gmail.com','scrypt:32768:8:1$MO3dN7fOVHoP418f$5fc5d88251a2efd878edd46144455d6af65808363f0011d62dd25234d18d73adf870688920f88ed29fe7e42fa86192b65e4aa3a51712943e57127d0828e52fdd','Test2','User','end_user','1','2026-02-27 01:50:07','2026-02-27 10:27:57'),(3,'super_admin@gmail.com','scrypt:32768:8:1$TzLnTgD6ksyi9rb5$38e3151af36059bc2c2f9d6fdeb32f02f8d88d852d77f92c3b45ba27024179c563ffb6e0d84229094d974b02b927abd5bddbb1d52a16fb571d4f4bdf1a7699ac','Super','Admin','super_admin','1','2026-02-27 02:13:38','2026-03-02 09:42:06'),(4,'user1@gmail.com','scrypt:32768:8:1$HGlTLdpSRZWCVtBh$bd7fce6c42678416e040342a93cc7c6206972a19ac219aefb17f447e086a83c51528425f0388e3413144ae177c13da0b0e580388a47f5a7fd11260752791a10c','User1','Test','admin','1','2026-02-27 03:56:12','2026-02-27 14:17:45');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -91,4 +91,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-02  9:28:38
+-- Dump completed on 2026-03-02  9:49:53
