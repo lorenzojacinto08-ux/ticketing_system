@@ -7,6 +7,10 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 from functools import wraps
+from dotenv import load_dotenv
+
+# Load environment variables from .env file if it exists
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -86,17 +90,34 @@ def role_required(*allowed_roles):
         return wrapped
     return decorator
 
-# NOTE: For production, load this from an environment variable instead.
-app.config["SECRET_KEY"] = "dev-secret-change-me"
+# Load SECRET_KEY from environment variable or use a default for development
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-change-me")
 
 # Function to get a fresh DB connection
 def get_db_connection():
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="root",
-        database="ticketing_db"
-    )
+    # Try Railway's DATABASE_URL first, then fall back to individual variables
+    database_url = os.getenv("DATABASE_URL")
+    
+    if database_url:
+        # Parse DATABASE_URL format: mysql://username:password@host:port/database
+        import urllib.parse
+        parsed = urllib.parse.urlparse(database_url)
+        return mysql.connector.connect(
+            host=parsed.hostname,
+            user=parsed.username,
+            password=parsed.password,
+            database=parsed.path[1:],  # Remove leading slash
+            port=parsed.port or 3306
+        )
+    else:
+        # Fall back to individual environment variables
+        return mysql.connector.connect(
+            host=os.getenv("DB_HOST", "localhost"),
+            user=os.getenv("DB_USER", "root"),
+            password=os.getenv("DB_PASSWORD", "root"),
+            database=os.getenv("DB_NAME", "ticketing_db"),
+            port=int(os.getenv("DB_PORT", "3306"))
+        )
 
 
 def get_entries_pk_column(db):
@@ -1417,4 +1438,9 @@ def logout():
     return redirect(url_for("login"))
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Configure for network access
+    app.run(
+        host="0.0.0.0",  # Accept connections from any IP
+        port=5000,        # Port to listen on
+        debug=True        # Keep debug mode for development
+    )

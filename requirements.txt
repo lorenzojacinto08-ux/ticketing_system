@@ -1,7 +1,6 @@
-# Flask Ticketing System - Windows Compatible Requirements
+# Flask Ticketing System - Production Requirements
 # Core Flask packages
 Flask==3.1.0
-Flask-MySQLdb==2.0.0
 mysql-connector-python==9.4.0
 Werkzeug==3.1.3
 
@@ -21,9 +20,11 @@ blinker==1.9.0
 # Email support (optional)
 Flask-Mail==0.9.1
 
-# Development and production server
+# Production server
 gunicorn==23.0.0
 
-# Additional utilities
-requests==2.31.0
+# Environment variables
 python-dotenv==1.1.1
+
+# HTTP requests
+requests==2.31.0
