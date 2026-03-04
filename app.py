@@ -180,6 +180,32 @@ def get_db_connection():
         )
 
 
+def run_migrations():
+    """Run database migrations to ensure schema is up to date"""
+    try:
+        db = get_db_connection()
+        cursor = db.cursor()
+        
+        # Check if service_done column exists
+        cursor.execute("SHOW COLUMNS FROM entries LIKE 'service_done'")
+        if not cursor.fetchone():
+            cursor.execute("ALTER TABLE entries ADD COLUMN service_done TEXT DEFAULT NULL AFTER job_order")
+            print("Added service_done column")
+        
+        # Check if labor_fee column exists
+        cursor.execute("SHOW COLUMNS FROM entries LIKE 'labor_fee'")
+        if not cursor.fetchone():
+            cursor.execute("ALTER TABLE entries ADD COLUMN labor_fee DECIMAL(10, 2) DEFAULT NULL AFTER service_done")
+            print("Added labor_fee column")
+        
+        db.commit()
+        cursor.close()
+        db.close()
+    except Exception as e:
+        print(f"Migration error: {e}")
+        # Don't let migration errors break the app
+
+
 def get_entries_pk_column(db):
     """Determine the primary key column for the entries table."""
     cursor = db.cursor()
@@ -1626,6 +1652,9 @@ def logout():
     return redirect(url_for("login"))
 
 if __name__ == "__main__":
+    # Run database migrations before starting the app
+    run_migrations()
+    
     # Configure for network access
     port = int(os.environ.get("PORT", 5000))
     debug_mode = os.environ.get("FLASK_ENV") == "development"
