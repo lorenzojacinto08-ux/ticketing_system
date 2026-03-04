@@ -1355,7 +1355,7 @@ def delete_ticket(ticket_id):
         contact_number=del_contact,
         email=del_email,
     )
-    return redirect(url_for("home", _anchor="tickets"))
+    return redirect(url_for("home"))
 
 
 @app.route("/tickets/<int:ticket_id>/job-order")
