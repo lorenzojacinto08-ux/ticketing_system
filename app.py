@@ -1326,9 +1326,15 @@ def delete_ticket(ticket_id):
         entry = cursor.fetchone()
         cursor.execute(f"DELETE FROM entries WHERE {pk_col} = %s", (ticket_id,))
         db.commit()
+        flash("Ticket deleted successfully.", "success")
+    except Exception as e:
+        db.rollback()
+        app.logger.error(f"Error deleting ticket {ticket_id}: {e}")
+        flash("Error deleting ticket. Please try again.", "danger")
     finally:
         cursor.close()
         db.close()
+    
     if entry:
         del_name = entry.get("store_name") or entry.get("Name")
         del_subject = entry.get("subject") or entry.get("Concern") or entry.get("concern")
