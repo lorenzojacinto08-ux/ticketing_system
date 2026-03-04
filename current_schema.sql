@@ -34,6 +34,8 @@ CREATE TABLE `entries` (
   `status` varchar(50) NOT NULL DEFAULT 'pending',
   `remedy` varchar(255) DEFAULT NULL,
   `job_order` varchar(10) DEFAULT NULL,
+  `service_done` TEXT DEFAULT NULL,
+  `labor_fee` DECIMAL(10, 2) DEFAULT NULL,
   PRIMARY KEY (`ticket_no`),
   UNIQUE KEY `job_order_UNIQUE` (`job_order`)
 ) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
