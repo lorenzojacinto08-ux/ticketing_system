@@ -143,6 +143,8 @@
                                             data-date="{{ entry.date or entry.created_at or '' }}"
                                             data-email="{{ display_email or '' }}"
                                             data-contact="{{ display_contact or '' }}"
+                                            data-service-done="{{ entry.service_done or '' }}"
+                                            data-labor-fee="{{ entry.labor_fee or '' }}"
                                             data-concern="{{ ticket_concern }}">
                                             <td><span class="ticket-id">{{ entry.ticket_no or entry.id or '—' }}</span></td>
                                             <td>
@@ -244,6 +246,14 @@
                         <dt>Email</dt>
                         <dd id="ticket-modal-email"></dd>
                     </div>
+                    <div>
+                        <dt>Service Done</dt>
+                        <dd id="ticket-modal-service-done"></dd>
+                    </div>
+                    <div>
+                        <dt>Labor Fee</dt>
+                        <dd id="ticket-modal-labor-fee"></dd>
+                    </div>
                 </dl>
                 <div class="ticket-modal-section">
                     <h3 class="ticket-modal-section-title">Reported concern</h3>
@@ -271,6 +281,8 @@
             const joEl = document.getElementById('ticket-modal-jo');
             const contactEl = document.getElementById('ticket-modal-contact');
             const emailEl = document.getElementById('ticket-modal-email');
+            const serviceDoneEl = document.getElementById('ticket-modal-service-done');
+            const laborFeeEl = document.getElementById('ticket-modal-labor-fee');
             const concernEl = document.getElementById('ticket-modal-concern');
 
             function openModalFromRow(row) {
@@ -286,6 +298,8 @@
                 const jo = row.dataset.jo || '—';
                 const contact = row.dataset.contact || '—';
                 const email = row.dataset.email || '—';
+                const serviceDone = row.dataset.serviceDone || '—';
+                const laborFee = row.dataset.laborFee || '—';
                 const concern = row.dataset.concern || '—';
 
                 subjectEl.textContent = subject;
@@ -296,6 +310,8 @@
                 joEl.textContent = jo;
                 contactEl.textContent = contact;
                 emailEl.textContent = email;
+                serviceDoneEl.textContent = serviceDone;
+                laborFeeEl.textContent = laborFee;
                 concernEl.textContent = concern;
 
                 statusBadgeEl.className = 'status-badge ' + statusClass;

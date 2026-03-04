@@ -58,6 +58,14 @@
                                     <label for="reported_concern" class="form-label">Reported Concern</label>
                                     <textarea class="form-control" id="reported_concern" name="reported_concern" rows="4" required>{{ reported_concern }}</textarea>
                                 </div>
+                                <div class="col-md-6">
+                                    <label for="service_done" class="form-label">Service Done</label>
+                                    <textarea class="form-control" id="service_done" name="service_done" rows="3">{{ service_done or '' }}</textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="labor_fee" class="form-label">Labor Fee</label>
+                                    <input type="number" class="form-control" id="labor_fee" name="labor_fee" value="{{ labor_fee or '' }}" step="0.01" min="0">
+                                </div>
                                 <div class="col-md-4">
                                     <label for="status" class="form-label">Status</label>
                                     <select class="form-select" id="status" name="status" onchange="confirmStatusChange()">

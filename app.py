@@ -1146,6 +1146,8 @@ def edit_ticket(ticket_id):
             email = request.form.get("email", "").strip()
             subject = request.form.get("subject", "").strip()
             reported_concern = request.form.get("reported_concern", "").strip()
+            service_done = request.form.get("service_done", "").strip()
+            labor_fee = request.form.get("labor_fee", "").strip()
             assigned_to = request.form.get("assigned_to", "").strip()
             job_order = request.form.get("job_order", "").strip()
             status = (request.form.get("status", "pending") or "pending").strip().lower()
@@ -1206,6 +1208,12 @@ def edit_ticket(ticket_id):
                 normalized_status = "completed" if status in {"complete", "completed"} else status
                 add_update_param("status", normalized_status)
 
+            if "service_done" in cols:
+                add_update_param("service_done", service_done or None)
+
+            if "labor_fee" in cols:
+                add_update_param("labor_fee", labor_fee or None)
+
             if not set_clauses:
                 raise RuntimeError("No matching columns found for update on entries.")
 
@@ -1258,6 +1266,8 @@ def edit_ticket(ticket_id):
         email = entry.get("email") or entry.get("Email") or ""
         subject = entry.get("subject") or entry.get("Concern") or entry.get("concern") or ""
         job_order = entry.get("job_order") or entry.get("remedy") or ""
+        service_done = entry.get("service_done") or ""
+        labor_fee = entry.get("labor_fee") or ""
 
         status_raw = (entry.get("status") or entry.get("Status") or "pending").lower()
         if status_raw in ("complete", "completed"):
@@ -1302,6 +1312,8 @@ def edit_ticket(ticket_id):
             email=email,
             subject=subject,
             job_order=job_order,
+            service_done=service_done,
+            labor_fee=labor_fee,
             assigned_to=assigned_to,
             reported_concern=reported_concern,
             status=status_val,
