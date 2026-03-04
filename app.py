@@ -1439,8 +1439,11 @@ def logout():
 
 if __name__ == "__main__":
     # Configure for network access
+    port = int(os.environ.get("PORT", 5000))
+    debug_mode = os.environ.get("FLASK_ENV") == "development"
+    
     app.run(
         host="0.0.0.0",  # Accept connections from any IP
-        port=5000,        # Port to listen on
-        debug=True        # Keep debug mode for development
+        port=port,       # Use Railway's PORT or default to 5000
+        debug=debug_mode # Only use debug in development
     )
