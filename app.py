@@ -75,8 +75,19 @@ def log_event(action: str, **extra):
         app.logger.info("%s | %s", action, payload)
         
         # Also store in database for Railway deployment
-        if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("DYNO"):
+        # Check if we're in production (not local development)
+        is_production = (
+            os.getenv("RAILWAY_ENVIRONMENT") or 
+            os.getenv("DYNO") or 
+            os.getenv("DATABASE_URL") or
+            not os.getenv("FLASK_ENV") == "development"
+        )
+        
+        if is_production:
             try:
+                # Debug: Log that we're attempting to save to database
+                print(f"DEBUG: Attempting to save log to database - Action: {action}")
+                
                 db = get_db_connection()
                 cursor = db.cursor()
                 
@@ -102,9 +113,11 @@ def log_event(action: str, **extra):
                 """, (action, user_id, user_email, user_role, ip, ua, str(payload)))
                 
                 db.commit()
+                print(f"DEBUG: Successfully saved log to database")
                 cursor.close()
                 db.close()
-            except Exception:
+            except Exception as e:
+                print(f"DEBUG: Error saving log to database: {e}")
                 # Don't let logging errors break the app
                 pass
                 
@@ -457,8 +470,16 @@ def logs():
     )
 
     try:
+        # Check if we're in production (not local development)
+        is_production = (
+            os.getenv("RAILWAY_ENVIRONMENT") or 
+            os.getenv("DYNO") or 
+            os.getenv("DATABASE_URL") or
+            not os.getenv("FLASK_ENV") == "development"
+        )
+        
         # In Railway deployment, read logs from database
-        if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("DYNO"):
+        if is_production:
             try:
                 db = get_db_connection()
                 cursor = db.cursor(dictionary=True)
