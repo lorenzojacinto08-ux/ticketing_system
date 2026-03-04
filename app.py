@@ -15,13 +15,23 @@ load_dotenv()
 app = Flask(__name__)
 
 # --- Logging configuration ---
-LOG_FILE_PATH = os.path.join(os.path.dirname(__file__), "app.log")
-
-_log_handler = RotatingFileHandler(LOG_FILE_PATH, maxBytes=1_000_000, backupCount=3)
-_log_handler.setLevel(logging.INFO)
-_log_handler.setFormatter(
-    logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-)
+# Use stdout logging for Railway deployment (read-only filesystem)
+if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("DYNO"):
+    # Railway/Heroku style deployment - log to stdout
+    import sys
+    _log_handler = logging.StreamHandler(sys.stdout)
+    _log_handler.setLevel(logging.INFO)
+    _log_handler.setFormatter(
+        logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+    )
+else:
+    # Local development - log to file
+    LOG_FILE_PATH = os.path.join(os.path.dirname(__file__), "app.log")
+    _log_handler = RotatingFileHandler(LOG_FILE_PATH, maxBytes=1_000_000, backupCount=3)
+    _log_handler.setLevel(logging.INFO)
+    _log_handler.setFormatter(
+        logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+    )
 
 app.logger.setLevel(logging.INFO)
 app.logger.addHandler(_log_handler)
@@ -160,6 +170,41 @@ def compute_next_job_order(cursor, jo_col: str) -> str:
     max_num = row["max_num"] if isinstance(row, dict) else (row[0] if row else None)
     next_num = (int(max_num) if max_num is not None else 0) + 1
     return f"jo-{next_num:04d}"
+
+
+@app.route("/health")
+def health_check():
+    """Health check endpoint for Railway deployment"""
+    try:
+        # Test database connection
+        db = get_db_connection()
+        cursor = db.cursor()
+        
+        # Check if entries table exists
+        cursor.execute("SHOW TABLES LIKE 'entries'")
+        entries_exists = cursor.fetchone() is not None
+        
+        # Check if users table exists
+        cursor.execute("SHOW TABLES LIKE 'users'")
+        users_exists = cursor.fetchone() is not None
+        
+        cursor.close()
+        db.close()
+        
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "tables": {
+                "entries": entries_exists,
+                "users": users_exists
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "database": "disconnected",
+            "error": str(e)
+        }, 500
 
 
 @app.route("/")
@@ -375,8 +420,14 @@ def logs():
     )
 
     try:
-        if os.path.exists(LOG_FILE_PATH):
-            with open(LOG_FILE_PATH, "r", encoding="utf-8", errors="ignore") as f:
+        # In Railway deployment, logs go to stdout, so we can't read from a file
+        if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("DYNO"):
+            # Railway deployment - no log file available
+            log_entries = []
+            total_lines = 0
+        elif os.path.exists(os.path.join(os.path.dirname(__file__), "app.log")):
+            # Local development - read from log file
+            with open(os.path.join(os.path.dirname(__file__), "app.log"), "r", encoding="utf-8", errors="ignore") as f:
                 raw_lines = f.readlines()
             total_lines = len(raw_lines)
             # Show the most recent 1000 lines for filtering, newest first
@@ -398,6 +449,10 @@ def logs():
                         except Exception:
                             pass
                 log_entries.append(entry)
+        else:
+            # No log file found
+            log_entries = []
+            total_lines = 0
     except Exception:
         log_entries = []
 
