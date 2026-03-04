@@ -1315,7 +1315,7 @@ def edit_ticket(ticket_id):
 @login_required
 def delete_ticket(ticket_id):
     db = get_db_connection()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
     entry = None
     try:
         pk_col, _ = get_entries_pk_column(db)
