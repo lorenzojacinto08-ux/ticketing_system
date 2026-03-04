@@ -70,7 +70,44 @@ def log_event(action: str, **extra):
             "ua": ua,
         }
         payload.update(extra or {})
+        
+        # Always log to stdout (Railway) or file (local)
         app.logger.info("%s | %s", action, payload)
+        
+        # Also store in database for Railway deployment
+        if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("DYNO"):
+            try:
+                db = get_db_connection()
+                cursor = db.cursor()
+                
+                # Create logs table if it doesn't exist
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS app_logs (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        action VARCHAR(100) NOT NULL,
+                        user_id INT,
+                        user_email VARCHAR(255),
+                        user_role VARCHAR(50),
+                        ip_address VARCHAR(45),
+                        user_agent TEXT,
+                        payload JSON
+                    )
+                """)
+                
+                # Insert log entry
+                cursor.execute("""
+                    INSERT INTO app_logs (action, user_id, user_email, user_role, ip_address, user_agent, payload)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (action, user_id, user_email, user_role, ip, ua, str(payload)))
+                
+                db.commit()
+                cursor.close()
+                db.close()
+            except Exception:
+                # Don't let logging errors break the app
+                pass
+                
     except Exception:
         # Logging must never break the main request.
         pass
@@ -420,11 +457,68 @@ def logs():
     )
 
     try:
-        # In Railway deployment, logs go to stdout, so we can't read from a file
+        # In Railway deployment, read logs from database
         if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("DYNO"):
-            # Railway deployment - no log file available
-            log_entries = []
-            total_lines = 0
+            try:
+                db = get_db_connection()
+                cursor = db.cursor(dictionary=True)
+                
+                # Check if logs table exists
+                cursor.execute("SHOW TABLES LIKE 'app_logs'")
+                if cursor.fetchone():
+                    # Build query with filters
+                    query = "SELECT * FROM app_logs WHERE 1=1"
+                    params = []
+                    
+                    if search_query:
+                        query += " AND (action LIKE %s OR user_email LIKE %s OR payload LIKE %s)"
+                        params.extend([f"%{search_query}%", f"%{search_query}%", f"%{search_query}%"])
+                    
+                    if date_from:
+                        query += " AND DATE(timestamp) >= %s"
+                        params.append(date_from)
+                    
+                    if date_to:
+                        query += " AND DATE(timestamp) <= %s"
+                        params.append(date_to)
+                    
+                    query += " ORDER BY timestamp DESC LIMIT 500"
+                    
+                    cursor.execute(query, params)
+                    db_logs = cursor.fetchall()
+                    
+                    # Convert database logs to expected format
+                    for log_row in db_logs:
+                        entry = {
+                            "timestamp": log_row["timestamp"].strftime("%Y-%m-%d %H:%M:%S,%f")[:-3],
+                            "level": "INFO",
+                            "event": log_row["action"],
+                            "meta": {
+                                "user_id": log_row["user_id"],
+                                "email": log_row["user_email"],
+                                "role": log_row["user_role"],
+                                "ip": log_row["ip_address"],
+                                "ua": log_row["user_agent"]
+                            }
+                        }
+                        if log_row["payload"]:
+                            try:
+                                import json
+                                entry["meta"].update(json.loads(log_row["payload"]))
+                            except:
+                                pass
+                        log_entries.append(entry)
+                    
+                    total_lines = len(db_logs)
+                else:
+                    log_entries = []
+                    total_lines = 0
+                
+                cursor.close()
+                db.close()
+            except Exception as e:
+                log_entries = []
+                total_lines = 0
         elif os.path.exists(os.path.join(os.path.dirname(__file__), "app.log")):
             # Local development - read from log file
             with open(os.path.join(os.path.dirname(__file__), "app.log"), "r", encoding="utf-8", errors="ignore") as f:
