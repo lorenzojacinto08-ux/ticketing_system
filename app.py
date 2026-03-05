@@ -397,13 +397,74 @@ def backups():
             db.close()
 
         output = io.StringIO()
-        fieldnames = list(entries[0].keys()) if entries else list(cols)
+        
+        # Define a more user-friendly column order
+        preferred_order = [
+            'ticket_no', 'job_order', 'store_name', 'contact_number', 'email', 
+            'subject', 'concern', 'reported_concern', 'service_done', 
+            'labor_fee', 'assigned_it', 'assigned_to', 'status', 'date', 'created_at', 'remedy'
+        ]
+        
+        # Get all available columns and reorder them
+        if entries:
+            all_columns = list(entries[0].keys())
+            # Put preferred columns first, then any remaining columns
+            fieldnames = [col for col in preferred_order if col in all_columns]
+            fieldnames += [col for col in all_columns if col not in preferred_order]
+        else:
+            fieldnames = list(cols)
 
         if fieldnames:
             writer = csv.DictWriter(output, fieldnames=fieldnames)
-            writer.writeheader()
+            
+            # Write header with better column names
+            header_mapping = {
+                'ticket_no': 'Ticket No',
+                'job_order': 'Job Order',
+                'store_name': 'Store Name',
+                'contact_number': 'Contact Number',
+                'email': 'Email',
+                'subject': 'Subject',
+                'concern': 'Concern',
+                'reported_concern': 'Reported Concern',
+                'service_done': 'Service Done',
+                'labor_fee': 'Labor Fee',
+                'assigned_it': 'Assigned IT',
+                'assigned_to': 'Assigned To',
+                'status': 'Status',
+                'date': 'Date',
+                'created_at': 'Created At',
+                'remedy': 'Remedy'
+            }
+            
+            # Write custom header
+            custom_header = [header_mapping.get(field, field.replace('_', ' ').title()) for field in fieldnames]
+            writer.writerow(dict(zip(fieldnames, custom_header)))
+            
+            # Write data rows
             for row in entries:
-                writer.writerow(row)
+                # Format the row for better readability
+                formatted_row = {}
+                for field in fieldnames:
+                    value = row.get(field, '')
+                    if value is None:
+                        formatted_row[field] = ''
+                    elif field in ['date', 'created_at'] and value:
+                        # Format datetime fields
+                        if isinstance(value, datetime):
+                            formatted_row[field] = value.strftime('%Y-%m-%d %H:%M:%S')
+                        else:
+                            formatted_row[field] = str(value)
+                    elif field == 'labor_fee' and value:
+                        # Format currency
+                        try:
+                            formatted_row[field] = f"{float(value):.2f}"
+                        except (ValueError, TypeError):
+                            formatted_row[field] = str(value)
+                    else:
+                        formatted_row[field] = str(value)
+                
+                writer.writerow(formatted_row)
 
         csv_data = output.getvalue()
         output.close()
@@ -416,18 +477,75 @@ def backups():
     # If user requested a CSV download for a specific date and we have a valid date, return CSV instead of HTML
     if selected_date_str and download and not filter_error:
         output = io.StringIO()
-
+        
+        # Define a more user-friendly column order
+        preferred_order = [
+            'ticket_no', 'job_order', 'store_name', 'contact_number', 'email', 
+            'subject', 'concern', 'reported_concern', 'service_done', 
+            'labor_fee', 'assigned_it', 'assigned_to', 'status', 'date', 'created_at', 'remedy'
+        ]
+        
+        # Get all available columns and reorder them
         fieldnames = []
         if entries:
-            fieldnames = list(entries[0].keys())
+            all_columns = list(entries[0].keys())
+            # Put preferred columns first, then any remaining columns
+            fieldnames = [col for col in preferred_order if col in all_columns]
+            fieldnames += [col for col in all_columns if col not in preferred_order]
         elif cols:
             fieldnames = list(cols)
 
         if fieldnames:
             writer = csv.DictWriter(output, fieldnames=fieldnames)
-            writer.writeheader()
+            
+            # Write header with better column names
+            header_mapping = {
+                'ticket_no': 'Ticket No',
+                'job_order': 'Job Order',
+                'store_name': 'Store Name',
+                'contact_number': 'Contact Number',
+                'email': 'Email',
+                'subject': 'Subject',
+                'concern': 'Concern',
+                'reported_concern': 'Reported Concern',
+                'service_done': 'Service Done',
+                'labor_fee': 'Labor Fee',
+                'assigned_it': 'Assigned IT',
+                'assigned_to': 'Assigned To',
+                'status': 'Status',
+                'date': 'Date',
+                'created_at': 'Created At',
+                'remedy': 'Remedy'
+            }
+            
+            # Write custom header
+            custom_header = [header_mapping.get(field, field.replace('_', ' ').title()) for field in fieldnames]
+            writer.writerow(dict(zip(fieldnames, custom_header)))
+            
+            # Write data rows
             for row in entries:
-                writer.writerow(row)
+                # Format the row for better readability
+                formatted_row = {}
+                for field in fieldnames:
+                    value = row.get(field, '')
+                    if value is None:
+                        formatted_row[field] = ''
+                    elif field in ['date', 'created_at'] and value:
+                        # Format datetime fields
+                        if isinstance(value, datetime):
+                            formatted_row[field] = value.strftime('%Y-%m-%d %H:%M:%S')
+                        else:
+                            formatted_row[field] = str(value)
+                    elif field == 'labor_fee' and value:
+                        # Format currency
+                        try:
+                            formatted_row[field] = f"{float(value):.2f}"
+                        except (ValueError, TypeError):
+                            formatted_row[field] = str(value)
+                    else:
+                        formatted_row[field] = str(value)
+                
+                writer.writerow(formatted_row)
 
         csv_data = output.getvalue()
         output.close()
