@@ -334,6 +334,30 @@
                             </div>
                         </div>
                     </div>
+                    <div class="so-row">
+                        <div class="so-col">
+                            <div class="so-field">
+                                <div class="so-label">Hardware</div>
+                                <div class="so-value" style="font-size: 24px;">
+                                    {% if service_done and ('hardware' in service_done.lower() or 'cpu' in service_done.lower() or 'physical' in service_done.lower()) %}
+                                        ☑
+                                    {% else %}
+                                        ☐
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="so-field">
+                                <div class="so-label">Software</div>
+                                <div class="so-value" style="font-size: 24px;">
+                                    {% if service_done and ('software' in service_done.lower() or 'app' in service_done.lower() or 'program' in service_done.lower()) %}
+                                        ☑
+                                    {% else %}
+                                        ☐
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="so-field">
                         <div class="so-label">Address:</div>
                         <div class="so-value">&nbsp;</div>
@@ -447,6 +471,30 @@
                             <div class="so-field">
                                 <div class="so-label">Email:</div>
                                 <div class="so-value">{{ email or ' ' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="so-row">
+                        <div class="so-col">
+                            <div class="so-field">
+                                <div class="so-label">Hardware</div>
+                                <div class="so-value" style="font-size: 24px;">
+                                    {% if service_done and ('hardware' in service_done.lower() or 'cpu' in service_done.lower() or 'physical' in service_done.lower()) %}
+                                        ☑
+                                    {% else %}
+                                        ☐
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="so-field">
+                                <div class="so-label">Software</div>
+                                <div class="so-value" style="font-size: 24px;">
+                                    {% if service_done and ('software' in service_done.lower() or 'app' in service_done.lower() or 'program' in service_done.lower()) %}
+                                        ☑
+                                    {% else %}
+                                        ☐
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </div>
