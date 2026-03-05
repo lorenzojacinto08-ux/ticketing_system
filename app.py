@@ -402,7 +402,7 @@ def backups():
         preferred_order = [
             'ticket_no', 'job_order', 'store_name', 'contact_number', 'email', 
             'subject', 'concern', 'reported_concern', 'service_done', 
-            'labor_fee', 'assigned_it', 'assigned_to', 'status', 'date', 'created_at', 'remedy'
+            'labor_fee', 'assigned_it', 'assigned_to', 'status', 'date', 'date_completed', 'created_at', 'remedy'
         ]
         
         # Get all available columns and reorder them
@@ -432,7 +432,8 @@ def backups():
                 'assigned_it': 'Assigned IT',
                 'assigned_to': 'Assigned To',
                 'status': 'Status',
-                'date': 'Date Completed',
+                'date': 'Date',
+                'date_completed': 'Date Completed',
                 'created_at': 'Created At',
                 'remedy': 'Remedy'
             }
@@ -450,7 +451,7 @@ def backups():
                     
                     if value is None:
                         formatted_row[field] = ''
-                    elif field in ['date', 'created_at'] and value:
+                    elif field in ['date', 'date_completed', 'created_at'] and value:
                         # Format datetime fields
                         if isinstance(value, datetime):
                             formatted_row[field] = value.strftime('%Y-%m-%d %H:%M:%S')
@@ -532,7 +533,7 @@ def backups():
                     
                     if value is None:
                         formatted_row[field] = ''
-                    elif field in ['date', 'created_at'] and value:
+                    elif field in ['date', 'date_completed', 'created_at'] and value:
                         # Format datetime fields
                         if isinstance(value, datetime):
                             formatted_row[field] = value.strftime('%Y-%m-%d %H:%M:%S')
@@ -1177,6 +1178,12 @@ def edit_ticket(ticket_id):
             if "status" in cols:
                 normalized_status = "completed" if status in {"complete", "completed"} else status
                 add_update_param("status", normalized_status)
+                
+                # Set date_completed when status is changed to completed
+                if normalized_status == "completed" and existing.get("status") not in ["completed", "complete"]:
+                    add_update_param("date_completed", datetime.now())
+                elif normalized_status != "completed":
+                    add_update_param("date_completed", None)
 
             if "service_done" in cols:
                 add_update_param("service_done", service_done or None)
