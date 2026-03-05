@@ -1181,6 +1181,9 @@ def job_order_print(ticket_id):
         if not assigned_to:
             assigned_to = email or "—"
 
+        # Get service details
+        service_done = entry.get("service_done") or ""
+
         vertical = request.args.get("vertical", "").lower() in ("1", "true", "yes")
 
         return render_template(
@@ -1194,6 +1197,7 @@ def job_order_print(ticket_id):
             job_order=job_order,
             assigned_to=assigned_to,
             reported_concern=reported_concern,
+            service_done=service_done,
             status_label=status_label,
             date_val=date_val,
         )

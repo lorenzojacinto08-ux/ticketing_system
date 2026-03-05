@@ -72,8 +72,29 @@
                                     <textarea class="form-control" id="reported_concern" name="reported_concern" rows="4" required>{{ reported_concern }}</textarea>
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="service_done" class="form-label">Service Done</label>
-                                    <textarea class="form-control" id="service_done" name="service_done" rows="3">{{ service_done or '' }}</textarea>
+                                    <label class="form-label">Service Type</label>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="hardware_service" name="hardware_service" value="1">
+                                                <label class="form-check-label" for="hardware_service">
+                                                    <i class="bi bi-cpu"></i> Hardware
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="software_service" name="software_service" value="1">
+                                                <label class="form-check-label" for="software_service">
+                                                    <i class="bi bi-code-slash"></i> Software
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <label for="service_details" class="form-label small text-muted">Service Details</label>
+                                        <textarea class="form-control" id="service_details" name="service_details" rows="2" placeholder="Describe what was done...">{{ service_done or '' }}</textarea>
+                                    </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="labor_fee" class="form-label">Labor Fee</label>
