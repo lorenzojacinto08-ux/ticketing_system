@@ -402,7 +402,7 @@ def backups():
         preferred_order = [
             'ticket_no', 'job_order', 'store_name', 'contact_number', 'email', 
             'subject', 'concern', 'reported_concern', 'service_done', 
-            'labor_fee', 'assigned_it', 'assigned_to', 'status', 'date', 'date_completed', 'created_at', 'remedy'
+            'labor_fee', 'assigned_it', 'assigned_to', 'status', 'date', 'created_at', 'remedy'
         ]
         
         # Get all available columns and reorder them
@@ -432,8 +432,7 @@ def backups():
                 'assigned_it': 'Assigned IT',
                 'assigned_to': 'Assigned To',
                 'status': 'Status',
-                'date': 'Date Created',
-                'date_completed': 'Date Completed',
+                'date': 'Date Completed',
                 'created_at': 'Created At',
                 'remedy': 'Remedy'
             }
@@ -451,13 +450,6 @@ def backups():
                     
                     if value is None:
                         formatted_row[field] = ''
-                    elif field == 'date_completed' and row.get('status') in ['completed', 'complete']:
-                        # Show date as completed date when status is completed
-                        date_val = row.get('date') or row.get('created_at')
-                        if date_val and isinstance(date_val, datetime):
-                            formatted_row[field] = date_val.strftime('%Y-%m-%d %H:%M:%S')
-                        else:
-                            formatted_row[field] = str(date_val) if date_val else ''
                     elif field in ['date', 'created_at'] and value:
                         # Format datetime fields
                         if isinstance(value, datetime):
@@ -540,13 +532,6 @@ def backups():
                     
                     if value is None:
                         formatted_row[field] = ''
-                    elif field == 'date_completed' and row.get('status') in ['completed', 'complete']:
-                        # Show date as completed date when status is completed
-                        date_val = row.get('date') or row.get('created_at')
-                        if date_val and isinstance(date_val, datetime):
-                            formatted_row[field] = date_val.strftime('%Y-%m-%d %H:%M:%S')
-                        else:
-                            formatted_row[field] = str(date_val) if date_val else ''
                     elif field in ['date', 'created_at'] and value:
                         # Format datetime fields
                         if isinstance(value, datetime):
