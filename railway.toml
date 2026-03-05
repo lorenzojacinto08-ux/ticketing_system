@@ -13,3 +13,8 @@ name = "web"
 
 [services.variables]
 PORT = "5000"
+
+# Add persistent volume for logs
+[[services.volumes]]
+name = "logs"
+mountPath = "/app/logs"

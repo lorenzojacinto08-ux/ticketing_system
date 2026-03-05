@@ -17,13 +17,26 @@ app = Flask(__name__)
 # --- Logging configuration ---
 # Use stdout logging for Railway deployment (read-only filesystem)
 if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("DYNO"):
-    # Railway/Heroku style deployment - log to stdout
-    import sys
-    _log_handler = logging.StreamHandler(sys.stdout)
-    _log_handler.setLevel(logging.INFO)
-    _log_handler.setFormatter(
-        logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-    )
+    # Check if logs volume is available
+    logs_dir = "/app/logs"
+    if os.path.exists(logs_dir) and os.access(logs_dir, os.W_OK):
+        # Use persistent volume for logs
+        LOG_FILE_PATH = os.path.join(logs_dir, "app.log")
+        _log_handler = RotatingFileHandler(LOG_FILE_PATH, maxBytes=1_000_000, backupCount=3)
+        _log_handler.setLevel(logging.INFO)
+        _log_handler.setFormatter(
+            logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+        )
+        print(f"Logging to file: {LOG_FILE_PATH}")
+    else:
+        # Railway/Heroku style deployment - log to stdout
+        import sys
+        _log_handler = logging.StreamHandler(sys.stdout)
+        _log_handler.setLevel(logging.INFO)
+        _log_handler.setFormatter(
+            logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+        )
+        print("Logging to stdout (no persistent volume available)")
 else:
     # Local development - log to file
     LOG_FILE_PATH = os.path.join(os.path.dirname(__file__), "app.log")
@@ -496,6 +509,30 @@ def backups():
         status_filter=status_filter,
         store_filter=store_filter,
     )
+
+
+@app.route("/logs/download")
+@login_required
+@role_required("super_admin", "admin")
+def download_logs():
+    """Download the log file if available"""
+    logs_dir = "/app/logs" if (os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("DYNO")) else os.path.dirname(__file__)
+    log_file_path = os.path.join(logs_dir, "app.log")
+    
+    if os.path.exists(log_file_path):
+        try:
+            with open(log_file_path, 'r', encoding='utf-8') as f:
+                log_content = f.read()
+            
+            response = Response(log_content, mimetype="text/plain")
+            response.headers["Content-Disposition"] = f"attachment; filename=app.log"
+            return response
+        except Exception as e:
+            flash(f"Error reading log file: {e}", "danger")
+            return redirect(url_for("logs"))
+    else:
+        flash("Log file not found.", "warning")
+        return redirect(url_for("logs"))
 
 
 @app.route("/logs")
