@@ -36,8 +36,26 @@
 
                 <div class="card">
                     <div class="card-body">
-                        <form method="post" action="{{ url_for('add_ticket') }}" onsubmit="return confirm('Are you sure you want to create this ticket?');">
-                            <div class="ticket-form">
+                        <!-- Tab Navigation -->
+                        <ul class="nav nav-tabs mb-4" id="ticketTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="single-tab" data-bs-toggle="tab" data-bs-target="#single-ticket" type="button" role="tab" aria-controls="single-ticket" aria-selected="true">
+                                    <i class="bi bi-plus-circle"></i> Single Ticket
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="csv-tab" data-bs-toggle="tab" data-bs-target="#csv-upload" type="button" role="tab" aria-controls="csv-upload" aria-selected="false">
+                                    <i class="bi bi-file-earmark-arrow-up"></i> CSV Upload
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Tab Content -->
+                        <div class="tab-content" id="ticketTabContent">
+                            <!-- Single Ticket Tab -->
+                            <div class="tab-pane fade show active" id="single-ticket" role="tabpanel" aria-labelledby="single-tab">
+                                <form method="post" action="{{ url_for('add_ticket') }}" onsubmit="return confirm('Are you sure you want to create this ticket?');">
+                                    <div class="ticket-form">
                                 <section class="ticket-form-section">
                                     <div class="ticket-form-section-header">
                                         <div class="ticket-form-section-icon">
@@ -132,7 +150,49 @@
                                     <a href="{{ url_for('home') }}" class="btn btn-outline-secondary ms-2">Cancel</a>
                                 </div>
                             </div>
-                        </form>
+                                </form>
+                            </div>
+                            
+                            <!-- CSV Upload Tab -->
+                            <div class="tab-pane fade" id="csv-upload" role="tabpanel" aria-labelledby="csv-tab">
+                                <div class="csv-upload-section">
+                                    <div class="alert alert-info mb-4">
+                                        <i class="bi bi-info-circle"></i>
+                                        <strong>CSV Format Requirements:</strong>
+                                        <ul class="mb-0 mt-2">
+                                            <li>Required columns: <code>store_name</code>, <code>subject</code>, <code>reported_concern</code></li>
+                                            <li>Optional columns: <code>contact_number</code>, <code>email</code>, <code>assigned_to</code>, <code>status</code></li>
+                                            <li>At least one of <code>contact_number</code> or <code>email</code> must be provided</li>
+                                            <li>Status values: <code>pending</code>, <code>ongoing</code>, <code>completed</code> (default: pending)</li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <a href="{{ url_for('download_csv_template') }}" class="btn btn-outline-primary">
+                                                <i class="bi bi-download"></i> Download CSV Template
+                                            </a>
+                                        </div>
+                                    </div>
+                                    
+                                    <form method="post" action="{{ url_for('add_ticket') }}" enctype="multipart/form-data" onsubmit="return confirm('Are you sure you want to create these tickets?');">
+                                        <input type="hidden" name="csv_upload" value="1">
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <label for="csv_file" class="form-label">Select CSV File</label>
+                                                <input type="file" class="form-control" id="csv_file" name="csv_file" accept=".csv" required>
+                                                <div class="form-text">Choose a CSV file containing ticket data</div>
+                                            </div>
+                                            <div class="col-md-4 d-flex align-items-end">
+                                                <button type="submit" class="btn btn-success w-100">
+                                                    <i class="bi bi-upload"></i> Upload CSV
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </main>

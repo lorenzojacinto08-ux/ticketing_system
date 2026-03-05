@@ -8,6 +8,7 @@ import os
 from logging.handlers import RotatingFileHandler
 from functools import wraps
 from dotenv import load_dotenv
+from werkzeug.utils import secure_filename
 
 # Load environment variables from .env file if it exists
 load_dotenv()
@@ -909,6 +910,11 @@ def settings():
 @login_required
 def add_ticket():
     if request.method == "POST":
+        # Check if this is a CSV upload
+        if request.form.get("csv_upload") == "1":
+            return handle_csv_upload()
+        
+        # Handle single ticket creation
         name = request.form.get("name", "").strip()
         contact_number = request.form.get("contact_number", "").strip()
         email = request.form.get("email", "").strip()
@@ -1045,6 +1051,211 @@ def add_ticket():
         next_jo = None
 
     return render_template("add_ticket.html", active_page="add_ticket", next_jo=next_jo)
+
+
+def handle_csv_upload():
+    """Handle CSV file upload for bulk ticket creation"""
+    if 'csv_file' not in request.files:
+        flash('No file selected', 'danger')
+        return redirect(url_for('add_ticket'))
+    
+    file = request.files['csv_file']
+    if file.filename == '':
+        flash('No file selected', 'danger')
+        return redirect(url_for('add_ticket'))
+    
+    if not file.filename.endswith('.csv'):
+        flash('Please upload a CSV file', 'danger')
+        return redirect(url_for('add_ticket'))
+    
+    try:
+        # Read and parse CSV
+        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        csv_reader = csv.DictReader(stream)
+        
+        # Validate required columns
+        required_columns = ['store_name', 'subject', 'reported_concern']
+        if not all(col in csv_reader.fieldnames for col in required_columns):
+            missing_cols = [col for col in required_columns if col not in csv_reader.fieldnames]
+            flash(f'Missing required columns: {", ".join(missing_cols)}', 'danger')
+            return redirect(url_for('add_ticket'))
+        
+        # Process tickets
+        tickets_created = 0
+        tickets_failed = 0
+        error_messages = []
+        
+        db = get_db_connection()
+        cursor = db.cursor()
+        
+        try:
+            cursor.execute("SHOW COLUMNS FROM entries")
+            cols = {row[0] for row in cursor.fetchall()}
+            jo_col = "job_order" if "job_order" in cols else ("remedy" if "remedy" in cols else None)
+            
+            for row_num, row in enumerate(csv_reader, start=2):  # Start at 2 to account for header
+                try:
+                    # Extract and validate data
+                    store_name = row.get('store_name', '').strip()
+                    subject = row.get('subject', '').strip()
+                    reported_concern = row.get('reported_concern', '').strip()
+                    contact_number = row.get('contact_number', '').strip() or None
+                    email = row.get('email', '').strip() or None
+                    assigned_to = row.get('assigned_to', '').strip() or None
+                    status = row.get('status', 'pending').strip().lower()
+                    
+                    # Validate required fields
+                    if not store_name or not subject or not reported_concern:
+                        tickets_failed += 1
+                        error_messages.append(f"Row {row_num}: Missing required fields")
+                        continue
+                    
+                    # Validate contact info
+                    if not contact_number and not email:
+                        tickets_failed += 1
+                        error_messages.append(f"Row {row_num}: At least one of contact_number or email is required")
+                        continue
+                    
+                    # Normalize status
+                    if status not in {"pending", "ongoing", "completed", "complete", "in progress", "in_progress"}:
+                        status = "pending"
+                    else:
+                        status = "completed" if status in {"complete", "completed"} else status
+                    
+                    # Generate job order
+                    job_order = compute_next_job_order(cursor, jo_col) if jo_col else None
+                    
+                    # Build insert query
+                    insert_cols = []
+                    insert_sql_values = []
+                    insert_params = []
+                    
+                    def add_param_col(col_name, value):
+                        insert_cols.append(col_name)
+                        insert_sql_values.append("%s")
+                        insert_params.append(value)
+                    
+                    def add_sql_col(col_name, sql_expr):
+                        insert_cols.append(col_name)
+                        insert_sql_values.append(sql_expr)
+                    
+                    if "store_name" in cols:
+                        add_param_col("store_name", store_name)
+                    if "contact_number" in cols:
+                        add_param_col("contact_number", contact_number)
+                    if "email" in cols:
+                        add_param_col("email", email)
+                    if "subject" in cols:
+                        add_param_col("subject", subject)
+                    if jo_col:
+                        add_param_col(jo_col, job_order)
+                    
+                    concern_col = next(
+                        (c for c in ("reported_concern", "reportedConcern", "concern", "details", "description") if c in cols),
+                        None,
+                    )
+                    if concern_col:
+                        add_param_col(concern_col, reported_concern)
+                    
+                    if "assigned_it" in cols:
+                        add_param_col("assigned_it", assigned_to)
+                    
+                    if "status" in cols:
+                        add_param_col("status", status)
+                    
+                    if "date" in cols:
+                        add_sql_col("date", "NOW()")
+                    elif "created_at" in cols:
+                        add_sql_col("created_at", "NOW()")
+                    
+                    # Insert ticket
+                    sql = f"INSERT INTO entries ({', '.join(insert_cols)}) VALUES ({', '.join(insert_sql_values)})"
+                    cursor.execute(sql, insert_params)
+                    
+                    # Update company history
+                    if store_name:
+                        try:
+                            cursor.execute(
+                                """
+                                INSERT INTO company_history (company_name, usage_count, last_used)
+                                VALUES (%s, 1, NOW())
+                                ON DUPLICATE KEY UPDATE 
+                                usage_count = usage_count + 1,
+                                last_used = NOW()
+                                """,
+                                (store_name,)
+                            )
+                        except Exception:
+                            pass
+                    
+                    tickets_created += 1
+                    
+                except Exception as e:
+                    tickets_failed += 1
+                    error_messages.append(f"Row {row_num}: {str(e)}")
+            
+            db.commit()
+            
+            # Flash results
+            if tickets_created > 0:
+                flash(f'Successfully created {tickets_created} tickets!', 'success')
+            if tickets_failed > 0:
+                flash(f'Failed to create {tickets_failed} tickets. Errors: {"; ".join(error_messages[:5])}', 'warning')
+                if len(error_messages) > 5:
+                    flash(f'... and {len(error_messages) - 5} more errors', 'warning')
+            
+        finally:
+            cursor.close()
+            db.close()
+        
+    except Exception as e:
+        flash(f'Error processing CSV file: {str(e)}', 'danger')
+        return redirect(url_for('add_ticket'))
+    
+    return redirect(url_for('home', _anchor="tickets"))
+
+
+@app.route("/download-csv-template")
+@login_required
+def download_csv_template():
+    """Download a CSV template for bulk ticket creation"""
+    output = io.StringIO()
+    
+    fieldnames = [
+        'store_name', 'contact_number', 'email', 'subject', 
+        'reported_concern', 'assigned_to', 'status'
+    ]
+    
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+    
+    # Add sample data
+    writer.writerow({
+        'store_name': 'Example Store',
+        'contact_number': '09123456789',
+        'email': 'store@example.com',
+        'subject': 'Hardware Issue',
+        'reported_concern': 'POS terminal not working properly',
+        'assigned_to': 'Jake',
+        'status': 'pending'
+    })
+    
+    writer.writerow({
+        'store_name': 'Another Store',
+        'contact_number': '09987654321',
+        'email': 'another@example.com',
+        'subject': 'Software Update',
+        'reported_concern': 'System needs software update',
+        'assigned_to': 'JR',
+        'status': 'ongoing'
+    })
+    
+    csv_data = output.getvalue()
+    output.close()
+    
+    response = Response(csv_data, mimetype="text/csv")
+    response.headers["Content-Disposition"] = "attachment; filename=ticket_template.csv"
+    return response
 
 
 @app.route("/api/companies/suggest")
