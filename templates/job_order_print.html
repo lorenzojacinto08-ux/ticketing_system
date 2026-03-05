@@ -14,7 +14,7 @@
             padding: 0;
             color: #212529;
             line-height: 1.5;
-            writing-mode: horizontal-tb;h
+            writing-mode: horizontal-tb;
             text-orientation: mixed;
         }
         @page {
@@ -373,7 +373,7 @@
                     </div>
                     <div class="so-text-block">
                         <div class="so-text-label">Service Done:</div>
-                        <div class="so-text-area">&nbsp;</div>
+                        <div class="so-text-area">{{ service_done or ' ' }}</div>
                     </div>
                     <div class="so-text-block">
                         <div class="so-text-label">Finding/s:</div>
@@ -404,7 +404,7 @@
                 <div class="so-bottom-col">
                     <div class="so-bottom-field">
                         <div class="so-bottom-label">Labor Charge:</div>
-                        <div class="so-bottom-value"></div>
+                        <div class="so-bottom-value">{{ labor_fee or '' }}</div>
                     </div>
                     <div class="so-bottom-field">
                         <div class="so-bottom-label">Parts:</div>
@@ -492,7 +492,7 @@
                     </div>
                     <div class="so-text-block">
                         <div class="so-text-label">Service Done:</div>
-                        <div class="so-text-area">&nbsp;</div>
+                        <div class="so-text-area">{{ service_done or ' ' }}</div>
                     </div>
                     <div class="so-text-block">
                         <div class="so-text-label">Finding/s:</div>
@@ -523,7 +523,7 @@
                 <div class="so-bottom-col">
                     <div class="so-bottom-field">
                         <div class="so-bottom-label">Labor Charge:</div>
-                        <div class="so-bottom-value"></div>
+                        <div class="so-bottom-value">{{ labor_fee or '' }}</div>
                     </div>
                     <div class="so-bottom-field">
                         <div class="so-bottom-label">Parts:</div>

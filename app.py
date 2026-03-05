@@ -1253,6 +1253,7 @@ def job_order_print(ticket_id):
 
         # Get service details
         service_done = entry.get("service_done") or ""
+        labor_fee = entry.get("labor_fee") or ""
 
         vertical = request.args.get("vertical", "").lower() in ("1", "true", "yes")
 
@@ -1268,6 +1269,7 @@ def job_order_print(ticket_id):
             assigned_to=assigned_to,
             reported_concern=reported_concern,
             service_done=service_done,
+            labor_fee=labor_fee,
             status_label=status_label,
             date_val=date_val,
         )
