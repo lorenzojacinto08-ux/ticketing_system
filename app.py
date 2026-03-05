@@ -64,81 +64,6 @@ def _is_active(val):
     return str(val).strip().lower() in ("1", "true", "yes")
 
 
-def log_event(action: str, **extra):
-    """
-    Write a structured audit log entry that includes basic user and request info.
-    Never pass sensitive values like raw passwords in **extra.
-    """
-    try:
-        user_id = session.get("user_id")
-        user_email = session.get("user_email")
-        user_role = session.get("user_role")
-        ip = request.remote_addr
-        ua = request.headers.get("User-Agent", "")
-        payload = {
-            "user_id": user_id,
-            "email": user_email,
-            "role": user_role,
-            "ip": ip,
-            "ua": ua,
-        }
-        payload.update(extra or {})
-        
-        # Always log to stdout (Railway) or file (local)
-        app.logger.info("%s | %s", action, payload)
-        
-        # Also store in database for Railway deployment
-        # Check if we're in production (not local development)
-        is_production = (
-            os.getenv("RAILWAY_ENVIRONMENT") or 
-            os.getenv("DYNO") or 
-            os.getenv("DATABASE_URL") or
-            not os.getenv("FLASK_ENV") == "development"
-        )
-        
-        if is_production:
-            try:
-                # Debug: Log that we're attempting to save to database
-                print(f"DEBUG: Attempting to save log to database - Action: {action}")
-                
-                db = get_db_connection()
-                cursor = db.cursor()
-                
-                # Create logs table if it doesn't exist
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS app_logs (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
-                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        action VARCHAR(100) NOT NULL,
-                        user_id INT,
-                        user_email VARCHAR(255),
-                        user_role VARCHAR(50),
-                        ip_address VARCHAR(45),
-                        user_agent TEXT,
-                        payload JSON
-                    )
-                """)
-                
-                # Insert log entry
-                cursor.execute("""
-                    INSERT INTO app_logs (action, user_id, user_email, user_role, ip_address, user_agent, payload)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """, (action, user_id, user_email, user_role, ip, ua, str(payload)))
-                
-                db.commit()
-                print(f"DEBUG: Successfully saved log to database")
-                cursor.close()
-                db.close()
-            except Exception as e:
-                print(f"DEBUG: Error saving log to database: {e}")
-                # Don't let logging errors break the app
-                pass
-                
-    except Exception:
-        # Logging must never break the main request.
-        pass
-
-
 def login_required(f):
     """Require an authenticated session."""
     @wraps(f)
@@ -165,26 +90,6 @@ def role_required(*allowed_roles):
 
 # Load SECRET_KEY from environment variable or use a default for development
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-change-me")
-
-# Template filter for pretty JSON printing
-@app.template_filter('tojson_pretty')
-def tojson_pretty(value):
-    """Pretty print JSON for template display"""
-    try:
-        import json
-        if value is None:
-            return "{}"
-        if isinstance(value, str):
-            # Try to parse string as JSON first
-            try:
-                parsed = json.loads(value)
-                return json.dumps(parsed, indent=2, ensure_ascii=False)
-            except:
-                return value
-        else:
-            return json.dumps(value, indent=2, ensure_ascii=False)
-    except Exception as e:
-        return str(value) if value else "{}"
 
 # Function to get a fresh DB connection
 def get_db_connection():
@@ -484,7 +389,6 @@ def backups():
         output.close()
 
         filename = "tickets-all.csv"
-        log_event("tickets_export_all_csv")
         response = Response(csv_data, mimetype="text/csv")
         response.headers["Content-Disposition"] = f"attachment; filename={filename}"
         return response
@@ -515,7 +419,6 @@ def backups():
         if store_filter:
             filename_parts.append(f"store-{store_filter.lower().replace(' ', '-')}")
         filename = "-".join(filename_parts) + ".csv"
-        log_event("tickets_export_date_csv", selected_date=selected_date_str)
         response = Response(csv_data, mimetype="text/csv")
         response.headers["Content-Disposition"] = f"attachment; filename={filename}"
         return response
@@ -529,182 +432,6 @@ def backups():
         status_filter=status_filter,
         store_filter=store_filter,
     )
-
-
-@app.route("/logs/download")
-@login_required
-@role_required("super_admin", "admin")
-def download_logs():
-    """Download the log file if available"""
-    logs_dir = "/app/logs" if (os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("DYNO")) else os.path.dirname(__file__)
-    log_file_path = os.path.join(logs_dir, "app.log")
-    
-    if os.path.exists(log_file_path):
-        try:
-            with open(log_file_path, 'r', encoding='utf-8') as f:
-                log_content = f.read()
-            
-            response = Response(log_content, mimetype="text/plain")
-            response.headers["Content-Disposition"] = f"attachment; filename=app.log"
-            return response
-        except Exception as e:
-            flash(f"Error reading log file: {e}", "danger")
-            return redirect(url_for("logs"))
-    else:
-        flash("Log file not found.", "warning")
-        return redirect(url_for("logs"))
-
-
-@app.route("/logs")
-@login_required
-@role_required("super_admin", "admin")
-def logs():
-    # Get filter parameters
-    search_query = request.args.get("search", "").strip().lower()
-    date_from = request.args.get("date_from", "").strip()
-    date_to = request.args.get("date_to", "").strip()
-    show_severity = request.args.get("severity", "all")
-    wrap_lines = request.args.get("wrap", "off") == "on"
-
-    # Create some sample log entries for testing
-    log_entries = [
-        {
-            'timestamp': '2026-03-05 11:28:00',
-            'level': 'INFO',
-            'data': {
-                'action': 'system_startup',
-                'message': 'Application started successfully'
-            }
-        },
-        {
-            'timestamp': '2026-03-05 11:28:01',
-            'level': 'INFO',
-            'data': {
-                'action': 'database_connected',
-                'message': 'Database connection established'
-            }
-        },
-        {
-            'timestamp': '2026-03-05 11:28:02',
-            'level': 'INFO',
-            'data': {
-                'action': 'app_deployed',
-                'message': 'Application deployed to Railway'
-            }
-        }
-    ]
-
-    total_count = len(log_entries)
-    db_error = None
-    
-    # Try to get real logs from database (but don't crash if it fails)
-    try:
-        is_production = (
-            os.getenv("RAILWAY_ENVIRONMENT") or 
-            os.getenv("DYNO") or 
-            os.getenv("DATABASE_URL") or
-            not os.getenv("FLASK_ENV") == "development"
-        )
-        
-        if is_production:
-            try:
-                db = get_db_connection()
-                cursor = db.cursor(dictionary=True)
-                
-                # Check if table exists
-                cursor.execute("SHOW TABLES LIKE 'app_logs'")
-                if cursor.fetchone():
-                    # Get real logs
-                    cursor.execute("SELECT * FROM app_logs ORDER BY timestamp DESC LIMIT 10")
-                    real_logs = cursor.fetchall()
-                    
-                    if real_logs:
-                        log_entries = []
-                        for log_row in real_logs:
-                            log_entries.append({
-                                'timestamp': str(log_row.get('timestamp', '')),
-                                'level': 'INFO',
-                                'data': {
-                                    'action': str(log_row.get('action', 'unknown')),
-                                    'user_email': str(log_row.get('user_email', '')),
-                                    'message': 'Database log entry'
-                                }
-                            })
-                
-                cursor.close()
-                db.close()
-                
-            except Exception as e:
-                db_error = f"Database error: {str(e)}"
-                print(f"Database error: {e}")
-                
-    except Exception as e:
-        db_error = f"Unexpected error: {str(e)}"
-        print(f"Unexpected error: {e}")
-
-    # Get available severity levels
-    severity_levels = ['all', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
-
-    return render_template(
-        "logs.html",
-        active_page="logs",
-        log_entries=log_entries,
-        total_log_lines=total_count,
-        db_error=db_error,
-        filters={
-            "search": search_query,
-            "date_from": date_from,
-            "date_to": date_to,
-            "severity": show_severity,
-            "wrap": wrap_lines
-        },
-        severity_levels=severity_levels
-    )
-
-
-@app.route("/init-db")
-@login_required
-@role_required("super_admin")
-def init_database():
-    """Initialize database tables manually"""
-    try:
-        db = get_db_connection()
-        cursor = db.cursor(dictionary=True)
-        
-        # Create app_logs table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS app_logs (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                action VARCHAR(100) NOT NULL,
-                user_id INT,
-                user_email VARCHAR(255),
-                user_role VARCHAR(50),
-                ip_address VARCHAR(45),
-                user_agent TEXT,
-                payload JSON,
-                INDEX idx_timestamp (timestamp),
-                INDEX idx_action (action),
-                INDEX idx_user_id (user_id)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-        """)
-        
-        # Insert test log
-        cursor.execute("""
-            INSERT INTO app_logs (action, payload) 
-            VALUES ('manual_init', '{"message": "Database table created manually", "timestamp": "' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '"}')
-        """)
-        
-        db.commit()
-        cursor.close()
-        db.close()
-        
-        flash("Database initialized successfully!", "success")
-        return redirect(url_for("logs"))
-        
-    except Exception as e:
-        flash(f"Error initializing database: {e}", "danger")
-        return redirect(url_for("logs"))
 
 
 def _can_manage_user(target_role):
@@ -802,11 +529,6 @@ def add_user():
                         (email, password_hash, first_name, last_name, role, 1),
                     )
                     db.commit()
-                    log_event(
-                        "user_created",
-                        created_email=email,
-                        created_role=role,
-                    )
                     flash("User created successfully.", "success")
                     return redirect(url_for("users"))
             finally:
@@ -888,12 +610,6 @@ def edit_user(user_id):
                         (first_name, last_name, role, 1 if is_active else 0, user_id),
                     )
                 db.commit()
-                log_event(
-                    "user_updated",
-                    target_user_id=user_id,
-                    new_role=role,
-                    is_active=is_active,
-                )
                 flash("User updated successfully.", "success")
                 return redirect(url_for("users"))
             finally:
@@ -957,11 +673,6 @@ def delete_user(user_id):
     finally:
         cursor.close()
         db.close()
-    log_event(
-        "user_deleted",
-        target_user_id=user_id,
-        target_role=user.get("role") if user else None,
-    )
     flash("User deleted.", "success")
     return redirect(url_for("users"))
 
@@ -1033,10 +744,6 @@ def profile():
                         (first_name, last_name, session.get("user_id")),
                     )
                 db.commit()
-                log_event(
-                    "profile_updated",
-                    updated_fields=["names"] if not new_password else ["names", "password"],
-                )
                 flash("Profile updated successfully.", "success")
                 return redirect(url_for("profile"))
             finally:
@@ -1156,17 +863,7 @@ def add_ticket():
                 cursor.execute(sql, insert_params)
                 db.commit()
                 ticket_pk = cursor.lastrowid
-                log_event(
-                    "ticket_created",
-                    ticket_pk=ticket_pk,
-                    store_name=name,
-                    subject=subject,
-                    job_order=job_order,
-                    assigned_to=assigned_to,
-                    status=status,
-                    contact_number=contact_number,
-                    email=email,
-                )
+                flash("Ticket added successfully.", "success")
             finally:
                 cursor.close()
                 db.close()
@@ -1298,24 +995,7 @@ def edit_ticket(ticket_id):
             else:
                 old_status_val = "pending"
 
-            log_event(
-                "ticket_updated",
-                ticket_id=ticket_id,
-                old_store_name=old_name,
-                new_store_name=name or None,
-                old_subject=old_subject,
-                new_subject=subject or None,
-                old_job_order=old_job_order,
-                new_job_order=job_order or None,
-                old_status=old_status_val,
-                new_status=status,
-                old_contact_number=old_contact,
-                new_contact_number=contact_number or None,
-                old_email=old_email,
-                new_email=email or None,
-                old_assigned_it=existing.get("assigned_it") if existing else None,
-                new_assigned_to=assigned_to or None,
-            )
+            flash("Ticket updated successfully.", "success")
             return redirect(url_for("home", _anchor="tickets"))
 
         # GET: load existing ticket and show form
@@ -1420,16 +1100,7 @@ def delete_ticket(ticket_id):
     else:
         del_name = del_subject = del_job_order = del_status = del_contact = del_email = None
 
-    log_event(
-        "ticket_deleted",
-        ticket_id=ticket_id,
-        store_name=del_name,
-        subject=del_subject,
-        job_order=del_job_order,
-        status=del_status,
-        contact_number=del_contact,
-        email=del_email,
-    )
+    flash("Ticket deleted successfully.", "success")
     return redirect(url_for("home"))
 
 
@@ -1607,10 +1278,8 @@ def login():
 
             if not user or not _is_active(user.get("is_active")):
                 error = "Invalid email or password."
-                log_event("login_failed", email=email)
             elif not check_password_hash(user["password_hash"], password):
                 error = "Invalid email or password."
-                log_event("login_failed", email=email)
             else:
                 session.clear()
                 session["user_id"] = user["id"]
@@ -1626,7 +1295,6 @@ def login():
                 session["user_name"] = " ".join(full_name_parts) or user["email"]
                 session["user_role"] = user.get("role")
 
-                log_event("login_success")
                 flash("Signed in successfully.", "success")
                 next_url = request.args.get("next") or url_for("dashboard")
                 return redirect(next_url)
@@ -1684,7 +1352,6 @@ def register():
 @app.route("/logout")
 def logout():
     session.clear()
-    log_event("logout")
     flash("You have been signed out.", "info")
     return redirect(url_for("login"))
 

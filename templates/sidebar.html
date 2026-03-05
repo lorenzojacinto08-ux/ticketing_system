@@ -4,9 +4,6 @@
         <a href="{{ url_for('dashboard') }}" class="{% if active_page == 'dashboard' %}active{% endif %}">Dashboard</a>
         <a href="{{ url_for('home') }}" class="{% if active_page == 'home' %}active{% endif %}">Tickets</a>
         <a href="{{ url_for('backups') }}" class="{% if active_page == 'backups' %}active{% endif %}">Backup</a>
-        {% if session.get('user_role') in ('super_admin', 'admin') %}
-        <a href="{{ url_for('logs') }}" class="{% if active_page == 'logs' %}active{% endif %}">System Logs</a>
-        {% endif %}
     </div>
     <div class="sidebar-section">
         <h3>Actions</h3>
