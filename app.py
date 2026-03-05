@@ -613,9 +613,9 @@ def logs():
                             # Extract level
                             level = "INFO"
                             if '[' in timestamp_part and ']' in timestamp_part:
-                                level_match = timestamp_part.split('[')[1].split(']')[0].strip()
-                                if level_match:
-                                    level = level_match
+                                level_part = timestamp_part.split('[')[1].split(']')[0].strip()
+                                if level_part:
+                                    level = level_part
                             
                             # Parse timestamp
                             try:
