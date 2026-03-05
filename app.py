@@ -290,7 +290,7 @@ def home():
     
     db = get_db_connection()  # new connection per request
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM entries")
+    cursor.execute("SELECT * FROM entries ORDER BY date DESC")
     entries = cursor.fetchall()
     cursor.close()
     db.close()  # close connection after use
@@ -306,7 +306,7 @@ def home():
 def dashboard():
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM entries")
+    cursor.execute("SELECT * FROM entries ORDER BY date DESC")
     entries = cursor.fetchall()
     cursor.close()
     db.close()
@@ -398,7 +398,7 @@ def backups():
                     filter_error = "No date column found on the entries table."
                 else:
                     cursor.execute(
-                        f"SELECT * FROM entries WHERE DATE({date_col}) = %s ORDER BY {date_col} ASC",
+                        f"SELECT * FROM entries WHERE DATE({date_col}) = %s ORDER BY {date_col} DESC",
                         (selected_date_str,),
                     )
                     entries = cursor.fetchall()
@@ -417,7 +417,7 @@ def backups():
             field_rows = cursor.fetchall()
             cols = {row["Field"] for row in field_rows}
 
-            cursor.execute("SELECT * FROM entries ORDER BY id ASC" if "id" in cols else "SELECT * FROM entries")
+            cursor.execute("SELECT * FROM entries ORDER BY date DESC" if "date" in cols else "SELECT * FROM entries ORDER BY ticket_no DESC")
             entries = cursor.fetchall()
         finally:
             cursor.close()
