@@ -172,6 +172,8 @@ def tojson_pretty(value):
     """Pretty print JSON for template display"""
     try:
         import json
+        if value is None:
+            return "{}"
         if isinstance(value, str):
             # Try to parse string as JSON first
             try:
@@ -181,8 +183,8 @@ def tojson_pretty(value):
                 return value
         else:
             return json.dumps(value, indent=2, ensure_ascii=False)
-    except Exception:
-        return str(value)
+    except Exception as e:
+        return str(value) if value else "{}"
 
 # Function to get a fresh DB connection
 def get_db_connection():
@@ -630,28 +632,34 @@ def logs():
                     for log_row in db_logs:
                         try:
                             payload_data = {}
-                            if log_row['payload']:
+                            if log_row.get('payload'):
                                 try:
-                                    payload_data = json.loads(log_row['payload'])
-                                except:
-                                    payload_data = {"raw_payload": log_row['payload']}
+                                    if isinstance(log_row['payload'], str):
+                                        payload_data = json.loads(log_row['payload'])
+                                    else:
+                                        payload_data = log_row['payload']
+                                except json.JSONDecodeError:
+                                    payload_data = {"raw_payload": str(log_row['payload'])}
+                                except Exception:
+                                    payload_data = {"parse_error": str(log_row['payload'])}
                             
                             log_entries.append({
-                                'timestamp': log_row['timestamp'],
+                                'timestamp': log_row.get('timestamp'),
                                 'level': 'INFO',
                                 'data': {
-                                    'action': log_row['action'],
-                                    'user_id': log_row['user_id'],
-                                    'user_email': log_row['user_email'],
-                                    'user_role': log_row['user_role'],
-                                    'ip_address': log_row['ip_address'],
-                                    'user_agent': log_row['user_agent'],
+                                    'action': log_row.get('action', 'unknown'),
+                                    'user_id': log_row.get('user_id'),
+                                    'user_email': log_row.get('user_email'),
+                                    'user_role': log_row.get('user_role'),
+                                    'ip_address': log_row.get('ip_address'),
+                                    'user_agent': log_row.get('user_agent'),
                                     **payload_data
                                 },
-                                'raw': f"{log_row['timestamp']} [INFO] {log_row['action']} | {log_row['payload']}"
+                                'raw': f"{log_row.get('timestamp', '')} [INFO] {log_row.get('action', 'unknown')} | {log_row.get('payload', '')}"
                             })
                         except Exception as e:
-                            # Skip malformed entries
+                            # Skip malformed entries but continue processing
+                            print(f"Skipping malformed log entry: {e}")
                             continue
                     
                     total_count = len(db_logs)
