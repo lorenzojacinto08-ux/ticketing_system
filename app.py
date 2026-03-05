@@ -166,6 +166,13 @@ def role_required(*allowed_roles):
 # Load SECRET_KEY from environment variable or use a default for development
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-change-me")
 
+# Template filter for pretty JSON printing
+@app.template_filter('tojson_pretty')
+def tojson_pretty(value):
+    """Pretty print JSON for template display"""
+    import json
+    return json.dumps(value, indent=2, ensure_ascii=False)
+
 # Function to get a fresh DB connection
 def get_db_connection():
     # Try Railway's DATABASE_URL first, then fall back to individual variables
@@ -540,114 +547,151 @@ def download_logs():
 @role_required("super_admin", "admin")
 def logs():
     from datetime import datetime
+    import json
 
     # Get filter parameters
     search_query = request.args.get("search", "").strip().lower()
     date_from = request.args.get("date_from", "").strip()
     date_to = request.args.get("date_to", "").strip()
-    action_filter = request.args.get("action", "").strip()
+    show_severity = request.args.get("severity", "all")
+    wrap_lines = request.args.get("wrap", "off") == "on"
 
     log_entries = []
     total_count = 0
 
     try:
-        db = get_db_connection()
-        cursor = db.cursor(dictionary=True)
+        # Check if we're in production (not local development)
+        is_production = (
+            os.getenv("RAILWAY_ENVIRONMENT") or 
+            os.getenv("DYNO") or 
+            os.getenv("DATABASE_URL") or
+            not os.getenv("FLASK_ENV") == "development"
+        )
         
-        # Check if logs table exists
-        cursor.execute("SHOW TABLES LIKE 'app_logs'")
-        if cursor.fetchone():
-            # Build query for user activities only
-            query = """
-                SELECT al.*, 
-                       u.first_name, u.last_name, u.role as user_role_display,
-                       u.email as user_email_display
-                FROM app_logs al
-                LEFT JOIN users u ON al.user_id = u.idusers
-                WHERE al.action IN (
-                    'user_login', 'user_logout', 'user_created', 'user_updated', 'user_deleted',
-                    'ticket_created', 'ticket_updated', 'ticket_deleted', 'ticket_viewed',
-                    'tickets_export_date_csv', 'tickets_export_all_csv'
-                )
-            """
-            params = []
-            
-            # Add search filter
-            if search_query:
-                query += " AND (al.action LIKE %s OR al.user_email LIKE %s OR u.first_name LIKE %s OR u.last_name LIKE %s OR al.payload LIKE %s)"
-                params.extend([f"%{search_query}%", f"%{search_query}%", f"%{search_query}%", f"%{search_query}%", f"%{search_query}%"])
-            
-            # Add action filter
-            if action_filter:
-                query += " AND al.action = %s"
-                params.append(action_filter)
-            
-            # Add date filters
-            if date_from:
-                query += " AND DATE(al.timestamp) >= %s"
-                params.append(date_from)
-            
-            if date_to:
-                query += " AND DATE(al.timestamp) <= %s"
-                params.append(date_to)
-            
-            # Order by most recent first
-            query += " ORDER BY al.timestamp DESC LIMIT 500"
-            
-            cursor.execute(query, params)
-            log_entries = cursor.fetchall()
-            
-            # Get total count
-            count_query = """
-                SELECT COUNT(*) as total
-                FROM app_logs al
-                LEFT JOIN users u ON al.user_id = u.idusers
-                WHERE al.action IN (
-                    'user_login', 'user_logout', 'user_created', 'user_updated', 'user_deleted',
-                    'ticket_created', 'ticket_updated', 'ticket_deleted', 'ticket_viewed',
-                    'tickets_export_date_csv', 'tickets_export_all_csv'
-                )
-            """
-            count_params = []
-            
-            if search_query:
-                count_query += " AND (al.action LIKE %s OR al.user_email LIKE %s OR u.first_name LIKE %s OR u.last_name LIKE %s OR al.payload LIKE %s)"
-                count_params.extend([f"%{search_query}%", f"%{search_query}%", f"%{search_query}%", f"%{search_query}%", f"%{search_query}%"])
-            
-            if action_filter:
-                count_query += " AND al.action = %s"
-                count_params.append(action_filter)
-            
-            if date_from:
-                count_query += " AND DATE(al.timestamp) >= %s"
-                count_params.append(date_from)
-            
-            if date_to:
-                count_query += " AND DATE(al.timestamp) <= %s"
-                count_params.append(date_to)
-            
-            cursor.execute(count_query, count_params)
-            total_count = cursor.fetchone()['total']
-            
-        else:
-            # No logs table found
+        if is_production:
+            # In production, read from Railway logs (stdout/stderr)
+            # For now, we'll show a message since Railway logs are in dashboard
             log_entries = []
             total_count = 0
+        else:
+            # Local development - read from log file
+            log_file_path = os.path.join(os.path.dirname(__file__), "app.log")
+            if os.path.exists(log_file_path):
+                with open(log_file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    raw_lines = f.readlines()
+                
+                total_count = len(raw_lines)
+                
+                # Parse log lines
+                for line in raw_lines:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    
+                    # Try to parse as structured log
+                    try:
+                        # Format: "2026-03-05 10:00:12,123 [INFO] message | {json_data}"
+                        if '|' in line and '[' in line:
+                            parts = line.split('|', 1)
+                            timestamp_part = parts[0].strip()
+                            data_part = parts[1].strip() if len(parts) > 1 else "{}"
+                            
+                            # Extract timestamp
+                            timestamp_str = timestamp_part.split('[')[0].strip()
+                            
+                            # Extract level
+                            level = "INFO"
+                            if '[' in timestamp_part and ']' in timestamp_part:
+                                level_match = timestamp_part.split('[')[1].split(']')[0].strip()
+                                if level_match:
+                                    level = level_match
+                            
+                            # Parse timestamp
+                            try:
+                                timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S,%f")
+                            except:
+                                timestamp = datetime.strptime(timestamp_str.split('.')[0], "%Y-%m-%d %H:%M:%S")
+                            
+                            # Try to parse data as JSON
+                            try:
+                                data_json = json.loads(data_part) if data_part.startswith('{') else {"message": data_part}
+                            except:
+                                data_json = {"message": data_part}
+                            
+                            log_entries.append({
+                                'timestamp': timestamp,
+                                'level': level,
+                                'data': data_json,
+                                'raw': line
+                            })
+                        else:
+                            # Fallback for unstructured lines
+                            timestamp = datetime.now()
+                            log_entries.append({
+                                'timestamp': timestamp,
+                                'level': 'INFO',
+                                'data': {"message": line},
+                                'raw': line
+                            })
+                    except Exception as e:
+                        # If parsing fails, treat as raw message
+                        timestamp = datetime.now()
+                        log_entries.append({
+                            'timestamp': timestamp,
+                            'level': 'INFO',
+                            'data': {"message": line, "parse_error": str(e)},
+                            'raw': line
+                        })
+            else:
+                log_entries = []
+                total_count = 0
         
-        cursor.close()
-        db.close()
+        # Apply filters
+        filtered_entries = []
+        for entry in log_entries:
+            # Search filter
+            if search_query:
+                searchable_text = entry['raw'].lower()
+                if search_query not in searchable_text:
+                    continue
+            
+            # Severity filter
+            if show_severity != "all" and entry['level'].lower() != show_severity.lower():
+                continue
+            
+            # Date filters
+            if date_from:
+                try:
+                    from_date = datetime.strptime(date_from, "%Y-%m-%d")
+                    if entry['timestamp'].date() < from_date.date():
+                        continue
+                except ValueError:
+                    pass
+            
+            if date_to:
+                try:
+                    to_date = datetime.strptime(date_to, "%Y-%m-%d")
+                    if entry['timestamp'].date() > to_date.date():
+                        continue
+                except ValueError:
+                    pass
+            
+            filtered_entries.append(entry)
+        
+        # Sort by timestamp (newest first)
+        filtered_entries.sort(key=lambda x: x['timestamp'], reverse=True)
+        
+        # Limit to 500 entries
+        log_entries = filtered_entries[:500]
+        total_count = len(filtered_entries)
         
     except Exception as e:
-        print(f"Error fetching logs: {e}")
+        print(f"Error reading logs: {e}")
         log_entries = []
         total_count = 0
 
-    # Get available actions for filter dropdown
-    available_actions = [
-        'user_login', 'user_logout', 'user_created', 'user_updated', 'user_deleted',
-        'ticket_created', 'ticket_updated', 'ticket_deleted', 'ticket_viewed',
-        'tickets_export_date_csv', 'tickets_export_all_csv'
-    ]
+    # Get available severity levels
+    severity_levels = ['all', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
     return render_template(
         "logs.html",
@@ -658,9 +702,10 @@ def logs():
             "search": search_query,
             "date_from": date_from,
             "date_to": date_to,
-            "action": action_filter
+            "severity": show_severity,
+            "wrap": wrap_lines
         },
-        available_actions=available_actions
+        severity_levels=severity_levels
     )
 
 

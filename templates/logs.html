@@ -28,13 +28,42 @@
           <div class="content-header">
             <div class="d-flex justify-content-between align-items-center">
               <div>
-                <h1>System Logs</h1>
-                <p class="subtitle">View application and audit logs</p>
+                <h1>Deploy Logs</h1>
+                <p class="subtitle">View application deployment and system logs</p>
               </div>
-              <a href="{{ url_for('download_logs') }}" class="btn btn-outline-dark">
-                <i class="bi bi-download"></i>
-                Download Log File
-              </a>
+              <div class="d-flex align-items-center gap-3">
+                <!-- View Options -->
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-gear"></i>
+                    View Options
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><h6 class="dropdown-header">Show severity level</h6></li>
+                    <li>
+                      <select class="form-select form-select-sm" onchange="changeSeverity(this.value)">
+                        {% for level in severity_levels %}
+                          <option value="{{ level }}" {% if filters.severity == level %}selected{% endif %}>{{ level|title }}</option>
+                        {% endfor %}
+                      </select>
+                    </li>
+                    <li><hr class="dropdown-divider"></li></li>
+                    <li>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="wrapLines" {% if filters.wrap %}checked{% endif %} onchange="toggleWrap()">
+                        <label class="form-check-label" for="wrapLines">Wrap long lines</label>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+                <a href="{{ url_for('download_logs') }}" class="btn btn-sm btn-outline-dark">
+                  <i class="bi bi-download"></i>
+                  Download
+                </a>
+                <span class="text-muted small">
+                  Showing {{ log_entries|length }}{% if total_log_lines %} of {{ total_log_lines }}{% endif %} lines
+                </span>
+              </div>
             </div>
           </div>
 
@@ -43,7 +72,7 @@
             <div class="card-body">
               <form method="GET" action="{{ url_for('logs') }}" id="filterForm">
                 <div class="row g-3">
-                  <div class="col-md-3">
+                  <div class="col-md-4">
                     <label for="search" class="form-label">Search</label>
                     <input
                       type="text"
@@ -51,19 +80,8 @@
                       id="search"
                       name="search"
                       value="{{ filters.search if filters.search else '' }}"
-                      placeholder="Search users, actions..."
+                      placeholder="Search logs..."
                     />
-                  </div>
-                  <div class="col-md-2">
-                    <label for="action" class="form-label">Action</label>
-                    <select class="form-select" id="action" name="action">
-                      <option value="">All Actions</option>
-                      {% for action in available_actions %}
-                        <option value="{{ action }}" {% if filters.action == action %}selected{% endif %}>
-                          {{ action.replace('_', ' ').title() }}
-                        </option>
-                      {% endfor %}
-                    </select>
                   </div>
                   <div class="col-md-2">
                     <label for="date_from" class="form-label">From Date</label>
@@ -85,7 +103,7 @@
                       value="{{ filters.date_to if filters.date_to else '' }}"
                     />
                   </div>
-                  <div class="col-md-3">
+                  <div class="col-md-4">
                     <label class="form-label d-block">&nbsp;</label>
                     <div class="btn-group w-100">
                       <button type="submit" class="btn btn-primary">
@@ -108,97 +126,42 @@
 
           <div class="card">
             <div class="card-body">
-              <div
-                class="d-flex justify-content-between align-items-center mb-3"
-              >
-                <h2 class="h5 mb-0">Recent log entries</h2>
-                <div class="d-flex align-items-center gap-3">
-                  <a href="{{ url_for('download_logs') }}" class="btn btn-sm btn-outline-dark">
-                    <i class="bi bi-download"></i>
-                    Download Log File
-                  </a>
-                  <span class="text-muted small">
-                    Showing latest {{ log_entries|length }}{% if total_log_lines
-                    %} of {{ total_log_lines }}{% endif %} lines
-                  </span>
-                </div>
-              </div>
               {% if log_entries %}
               <div class="log-viewer table-responsive">
-                <table class="table table-sm align-middle mb-0 log-table">
+                <table class="table table-sm table-monospace mb-0 log-table">
                   <thead>
                     <tr>
-                      <th scope="col">Time</th>
-                      <th scope="col">User</th>
-                      <th scope="col">Action</th>
-                      <th scope="col">Details</th>
-                      <th scope="col">IP Address</th>
+                      <th scope="col" style="width: 200px;">Time (GMT+8)</th>
+                      <th scope="col">Data</th>
                     </tr>
                   </thead>
                   <tbody>
                     {% for entry in log_entries %}
                     <tr>
-                      <td class="text-nowrap">{{ entry.timestamp.strftime('%Y-%m-%d %H:%M:%S') if entry.timestamp else "—" }}</td>
-                      <td>
-                        {% if entry.first_name or entry.last_name %}
-                          <div>
-                            <strong>{{ entry.first_name or '' }} {{ entry.last_name or '' }}</strong>
-                            {% if entry.user_role_display %}
-                              <span class="badge bg-secondary ms-1">{{ entry.user_role_display }}</span>
-                            {% endif %}
-                          </div>
-                          <div class="small text-muted">{{ entry.user_email_display or entry.user_email or '—' }}</div>
-                        {% elif entry.user_email %}
-                          <div>{{ entry.user_email }}</div>
-                          {% if entry.user_role %}
-                            <span class="badge bg-secondary">{{ entry.user_role }}</span>
-                          {% endif %}
-                        {% else %}
-                          <span class="text-muted">System</span>
-                        {% endif %}
-                      </td>
-                      <td>
-                        <span class="badge bg-{{ 'primary' if 'login' in entry.action else 'success' if 'created' in entry.action else 'warning' if 'updated' in entry.action else 'danger' if 'deleted' in entry.action else 'info' }}">
-                          {{ entry.action.replace('_', ' ').title() }}
-                        </span>
-                      </td>
-                      <td>
-                        {% if entry.payload %}
-                          <div class="small">
-                            {% set payload = entry.payload|load_json if entry.payload is string else entry.payload %}
-                            {% if payload %}
-                              {% if payload.store_name %}
-                                <span class="me-2"><strong>Store:</strong> {{ payload.store_name }}</span>
-                              {% endif %}
-                              {% if payload.ticket_no %}
-                                <span class="me-2"><strong>Ticket:</strong> #{{ payload.ticket_no }}</span>
-                              {% endif %}
-                              {% if payload.created_email %}
-                                <span class="me-2"><strong>Created:</strong> {{ payload.created_email }}</span>
-                              {% endif %}
-                              {% if payload.target_user_id %}
-                                <span class="me-2"><strong>Target User:</strong> #{{ payload.target_user_id }}</span>
-                              {% endif %}
-                              {% if payload.new_role %}
-                                <span class="me-2"><strong>New Role:</strong> {{ payload.new_role }}</span>
-                              {% endif %}
-                              {% if payload.selected_date %}
-                                <span class="me-2"><strong>Date:</strong> {{ payload.selected_date }}</span>
-                              {% endif %}
-                            {% endif %}
-                          </div>
+                      <td class="text-nowrap">{{ entry.timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3] if entry.timestamp else "—" }}</td>
+                      <td class="{% if not filters.wrap %}text-break{% endif %}">
+                        {% if entry.data %}
+                          <pre class="mb-0{% if filters.wrap %} text-wrap{% endif %}" style="background: transparent; border: none; font-size: 12px; color: #6c757d;">{{ entry.data|tojson_pretty if entry.data is mapping else entry.data|tojson }}</pre>
                         {% else %}
                           <span class="text-muted">—</span>
                         {% endif %}
                       </td>
-                      <td class="text-monospace small">{{ entry.ip_address or '—' }}</td>
                     </tr>
                     {% endfor %}
                   </tbody>
                 </table>
               </div>
               {% else %}
-              <p class="text-muted mb-0">No log entries recorded yet.</p>
+              <div class="text-center py-4">
+                {% if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("DYNO") %}
+                  <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Railway Logs:</strong> Deploy logs are available in the Railway dashboard under the "Logs" tab for your service.
+                  </div>
+                {% else %}
+                  <p class="text-muted mb-0">No log entries found. Check if app.log exists in the project directory.</p>
+                {% endif %}
+              </div>
               {% endif %}
             </div>
           </div>
@@ -207,13 +170,25 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function toggleWrap() {
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('wrap', document.getElementById('wrapLines').checked ? 'on' : 'off');
+            window.location.href = currentUrl.toString();
+        }
+        
+        function changeSeverity(level) {
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('severity', level);
+            window.location.href = currentUrl.toString();
+        }
+        
         // Auto-submit form when filters change (except search to avoid too many requests)
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('filterForm');
             const searchInput = document.getElementById('search');
             
-            // Auto-submit on change for dropdowns and date inputs
-            const autoSubmitInputs = form.querySelectorAll('select, input[type="date"]');
+            // Auto-submit on change for date inputs
+            const autoSubmitInputs = form.querySelectorAll('input[type="date"]');
             autoSubmitInputs.forEach(input => {
                 input.addEventListener('change', function() {
                     form.submit();
