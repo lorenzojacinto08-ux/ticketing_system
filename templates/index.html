@@ -154,6 +154,7 @@
                                             data-status-label="{{ status_label }}"
                                             data-status-class="{{ status_class }}"
                                             data-date="{{ entry.date or entry.created_at or '' }}"
+                                            data-date-completed="{{ entry.date if entry.status in ['completed', 'complete'] else '' }}"
                                             data-email="{{ display_email or '' }}"
                                             data-contact="{{ display_contact or '' }}"
                                             data-service-done="{{ entry.service_done or '' }}"
@@ -248,6 +249,10 @@
                         <dd id="ticket-modal-date"></dd>
                     </div>
                     <div>
+                        <dt>Date Completed</dt>
+                        <dd id="ticket-modal-date-completed"></dd>
+                    </div>
+                    <div>
                         <dt>JO</dt>
                         <dd id="ticket-modal-jo"></dd>
                     </div>
@@ -292,6 +297,7 @@
             const statusTextEl = document.getElementById('ticket-modal-status-text');
             const assigneeEl = document.getElementById('ticket-modal-assignee');
             const dateEl = document.getElementById('ticket-modal-date');
+            const dateCompletedEl = document.getElementById('ticket-modal-date-completed');
             const joEl = document.getElementById('ticket-modal-jo');
             const contactEl = document.getElementById('ticket-modal-contact');
             const emailEl = document.getElementById('ticket-modal-email');
@@ -309,6 +315,7 @@
                 const statusClass = row.dataset.statusClass || 'status-pending';
                 const assignee = row.dataset.assignee || '—';
                 const date = row.dataset.date || '—';
+                const dateCompleted = row.dataset.dateCompleted || '—';
                 const jo = row.dataset.jo || '—';
                 const contact = row.dataset.contact || '—';
                 const email = row.dataset.email || '—';
@@ -321,6 +328,7 @@
                 idEl.textContent = id;
                 assigneeEl.textContent = assignee;
                 dateEl.textContent = date;
+                dateCompletedEl.textContent = dateCompleted;
                 joEl.textContent = jo;
                 contactEl.textContent = contact;
                 emailEl.textContent = email;
