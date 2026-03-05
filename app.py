@@ -569,6 +569,7 @@ def logs():
 
     log_entries = []
     total_count = 0
+    db_error = None
 
     try:
         # Check if we're in production (not local development)
@@ -580,14 +581,16 @@ def logs():
         )
         
         if is_production:
-            # In production, show database logs only
+            # In production, try to show database logs
             try:
                 db = get_db_connection()
                 cursor = db.cursor(dictionary=True)
                 
                 # Check if logs table exists
                 cursor.execute("SHOW TABLES LIKE 'app_logs'")
-                if cursor.fetchone():
+                table_exists = cursor.fetchone()
+                
+                if table_exists:
                     # Build query for all logs
                     query = "SELECT * FROM app_logs WHERE 1=1"
                     params = []
@@ -625,104 +628,118 @@ def logs():
                     
                     # Convert to log entry format
                     for log_row in db_logs:
-                        log_entries.append({
-                            'timestamp': log_row['timestamp'],
-                            'level': 'INFO',
-                            'data': {
-                                'action': log_row['action'],
-                                'user_id': log_row['user_id'],
-                                'user_email': log_row['user_email'],
-                                'user_role': log_row['user_role'],
-                                'ip_address': log_row['ip_address'],
-                                'user_agent': log_row['user_agent'],
-                                **(json.loads(log_row['payload']) if log_row['payload'] else {})
-                            },
-                            'raw': f"{log_row['timestamp']} [{log_row.get('level', 'INFO')}] {log_row['action']} | {log_row['payload']}"
-                        })
+                        try:
+                            payload_data = {}
+                            if log_row['payload']:
+                                try:
+                                    payload_data = json.loads(log_row['payload'])
+                                except:
+                                    payload_data = {"raw_payload": log_row['payload']}
+                            
+                            log_entries.append({
+                                'timestamp': log_row['timestamp'],
+                                'level': 'INFO',
+                                'data': {
+                                    'action': log_row['action'],
+                                    'user_id': log_row['user_id'],
+                                    'user_email': log_row['user_email'],
+                                    'user_role': log_row['user_role'],
+                                    'ip_address': log_row['ip_address'],
+                                    'user_agent': log_row['user_agent'],
+                                    **payload_data
+                                },
+                                'raw': f"{log_row['timestamp']} [INFO] {log_row['action']} | {log_row['payload']}"
+                            })
+                        except Exception as e:
+                            # Skip malformed entries
+                            continue
                     
                     total_count = len(db_logs)
                 else:
-                    log_entries = []
-                    total_count = 0
+                    db_error = "app_logs table not found. Please run the SQL setup script."
                 
                 cursor.close()
                 db.close()
+                
             except Exception as e:
-                print(f"Error fetching database logs: {e}")
-                log_entries = []
-                total_count = 0
+                db_error = f"Database error: {str(e)}"
+                print(f"Database error in logs: {e}")
+                
         else:
             # Local development - read from log file
             log_file_path = os.path.join(os.path.dirname(__file__), "app.log")
             if os.path.exists(log_file_path):
-                with open(log_file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                    raw_lines = f.readlines()
-                
-                total_count = len(raw_lines)
-                
-                # Parse log lines
-                for line in raw_lines:
-                    line = line.strip()
-                    if not line:
-                        continue
+                try:
+                    with open(log_file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        raw_lines = f.readlines()
                     
-                    # Try to parse as structured log
-                    try:
-                        # Format: "2026-03-05 10:00:12,123 [INFO] message | {json_data}"
-                        if '|' in line and '[' in line:
-                            parts = line.split('|', 1)
-                            timestamp_part = parts[0].strip()
-                            data_part = parts[1].strip() if len(parts) > 1 else "{}"
-                            
-                            # Extract timestamp
-                            timestamp_str = timestamp_part.split('[')[0].strip()
-                            
-                            # Extract level
-                            level = "INFO"
-                            if '[' in timestamp_part and ']' in timestamp_part:
-                                level_part = timestamp_part.split('[')[1].split(']')[0].strip()
-                                if level_part:
-                                    level = level_part
-                            
-                            # Parse timestamp
-                            try:
-                                timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S,%f")
-                            except:
-                                timestamp = datetime.strptime(timestamp_str.split('.')[0], "%Y-%m-%d %H:%M:%S")
-                            
-                            # Try to parse data as JSON
-                            try:
-                                data_json = json.loads(data_part) if data_part.startswith('{') else {"message": data_part}
-                            except:
-                                data_json = {"message": data_part}
-                            
-                            log_entries.append({
-                                'timestamp': timestamp,
-                                'level': level,
-                                'data': data_json,
-                                'raw': line
-                            })
-                        else:
-                            # Fallback for unstructured lines
+                    total_count = len(raw_lines)
+                    
+                    # Parse log lines
+                    for line in raw_lines:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        
+                        # Try to parse as structured log
+                        try:
+                            # Format: "2026-03-05 10:00:12,123 [INFO] message | {json_data}"
+                            if '|' in line and '[' in line:
+                                parts = line.split('|', 1)
+                                timestamp_part = parts[0].strip()
+                                data_part = parts[1].strip() if len(parts) > 1 else "{}"
+                                
+                                # Extract timestamp
+                                timestamp_str = timestamp_part.split('[')[0].strip()
+                                
+                                # Extract level
+                                level = "INFO"
+                                if '[' in timestamp_part and ']' in timestamp_part:
+                                    level_part = timestamp_part.split('[')[1].split(']')[0].strip()
+                                    if level_part:
+                                        level = level_part
+                                
+                                # Parse timestamp
+                                try:
+                                    timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S,%f")
+                                except:
+                                    timestamp = datetime.strptime(timestamp_str.split('.')[0], "%Y-%m-%d %H:%M:%S")
+                                
+                                # Try to parse data as JSON
+                                try:
+                                    data_json = json.loads(data_part) if data_part.startswith('{') else {"message": data_part}
+                                except:
+                                    data_json = {"message": data_part}
+                                
+                                log_entries.append({
+                                    'timestamp': timestamp,
+                                    'level': level,
+                                    'data': data_json,
+                                    'raw': line
+                                })
+                            else:
+                                # Fallback for unstructured lines
+                                timestamp = datetime.now()
+                                log_entries.append({
+                                    'timestamp': timestamp,
+                                    'level': 'INFO',
+                                    'data': {"message": line},
+                                    'raw': line
+                                })
+                        except Exception as e:
+                            # If parsing fails, treat as raw message
                             timestamp = datetime.now()
                             log_entries.append({
                                 'timestamp': timestamp,
                                 'level': 'INFO',
-                                'data': {"message": line},
+                                'data': {"message": line, "parse_error": str(e)},
                                 'raw': line
                             })
-                    except Exception as e:
-                        # If parsing fails, treat as raw message
-                        timestamp = datetime.now()
-                        log_entries.append({
-                            'timestamp': timestamp,
-                            'level': 'INFO',
-                            'data': {"message": line, "parse_error": str(e)},
-                            'raw': line
-                        })
+                except Exception as e:
+                    db_error = f"Error reading log file: {str(e)}"
+                    print(f"Error reading log file: {e}")
             else:
-                log_entries = []
-                total_count = 0
+                db_error = "Local log file not found. No logs available."
         
         # Apply additional filters for local logs
         if not is_production and log_entries:
@@ -765,9 +782,8 @@ def logs():
             total_count = len(filtered_entries)
         
     except Exception as e:
-        print(f"Error reading logs: {e}")
-        log_entries = []
-        total_count = 0
+        db_error = f"Unexpected error: {str(e)}"
+        print(f"Unexpected error in logs: {e}")
 
     # Get available severity levels
     severity_levels = ['all', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
@@ -777,6 +793,7 @@ def logs():
         active_page="logs",
         log_entries=log_entries,
         total_log_lines=total_count,
+        db_error=db_error,
         filters={
             "search": search_query,
             "date_from": date_from,
