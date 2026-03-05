@@ -1389,12 +1389,6 @@ def edit_ticket(ticket_id):
             if "status" in cols:
                 normalized_status = "completed" if status in {"complete", "completed"} else status
                 add_update_param("status", normalized_status)
-                
-                # Set date_completed when status is changed to completed
-                if normalized_status == "completed" and existing.get("status") not in ["completed", "complete"]:
-                    add_update_param("date_completed", datetime.now())
-                elif normalized_status != "completed":
-                    add_update_param("date_completed", None)
 
             if "service_done" in cols:
                 add_update_param("service_done", service_done or None)
