@@ -23,6 +23,56 @@
   z-index: 9999 !important;
 }
 
+/* Fix form select dropdowns */
+.form-select {
+  z-index: 1002 !important;
+  position: relative !important;
+}
+
+/* Fix for select options and dropdowns */
+select, option {
+  z-index: 1003 !important;
+}
+
+/* Card body dropdown fixes */
+.card-body .form-select {
+  z-index: 1002 !important;
+  position: relative !important;
+}
+
+/* Filter form dropdown fixes */
+#ticket-filters .form-select {
+  z-index: 1002 !important;
+  position: relative !important;
+}
+
+/* Fix overflow issues that might cut off dropdowns */
+.card-body {
+  overflow: visible !important;
+}
+
+.form-control, .form-select {
+  overflow: visible !important;
+}
+
+/* Ensure dropdown options are visible */
+.form-select:focus {
+  z-index: 1004 !important;
+}
+
+/* Container overflow fixes */
+.container, .container-fluid {
+  overflow: visible !important;
+}
+
+.row {
+  overflow: visible !important;
+}
+
+.col-md-6, .col-lg-8, .col-md-3, .col-lg-2 {
+  overflow: visible !important;
+}
+
 .user-role-badge {
   display: inline-flex;
   align-items: center;
