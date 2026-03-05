@@ -5,6 +5,24 @@
   gap: 0.75rem;
 }
 
+/* Fix dropdown z-index issues */
+.dropdown-menu {
+  z-index: 9999 !important;
+}
+
+.dropdown {
+  position: relative;
+  z-index: 1001;
+}
+
+.btn-group .dropdown-menu {
+  z-index: 9999 !important;
+}
+
+.table-actions .dropdown-menu {
+  z-index: 9999 !important;
+}
+
 .user-role-badge {
   display: inline-flex;
   align-items: center;
@@ -532,6 +550,21 @@ aside.sidebar .sidebar-count {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  position: relative;
+  z-index: 1002;
+}
+
+/* Ensure all dropdowns in tables are visible */
+.table .dropdown-menu,
+.table-responsive .dropdown-menu,
+.card .dropdown-menu {
+  z-index: 9999 !important;
+  position: absolute !important;
+}
+
+/* Fix for dropdowns in table rows */
+tr .dropdown-menu {
+  z-index: 9999 !important;
 }
 
 .icon-button {
