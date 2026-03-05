@@ -788,6 +788,51 @@ def logs():
     )
 
 
+@app.route("/init-db")
+@login_required
+@role_required("super_admin")
+def init_database():
+    """Initialize database tables manually"""
+    try:
+        db = get_db_connection()
+        cursor = db.cursor(dictionary=True)
+        
+        # Create app_logs table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS app_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                action VARCHAR(100) NOT NULL,
+                user_id INT,
+                user_email VARCHAR(255),
+                user_role VARCHAR(50),
+                ip_address VARCHAR(45),
+                user_agent TEXT,
+                payload JSON,
+                INDEX idx_timestamp (timestamp),
+                INDEX idx_action (action),
+                INDEX idx_user_id (user_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+        """)
+        
+        # Insert test log
+        cursor.execute("""
+            INSERT INTO app_logs (action, payload) 
+            VALUES ('manual_init', '{"message": "Database table created manually", "timestamp": "' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '"}')
+        """)
+        
+        db.commit()
+        cursor.close()
+        db.close()
+        
+        flash("Database initialized successfully!", "success")
+        return redirect(url_for("logs"))
+        
+    except Exception as e:
+        flash(f"Error initializing database: {e}", "danger")
+        return redirect(url_for("logs"))
+
+
 def _can_manage_user(target_role):
     """True if the current session user can manage a user with target_role."""
     current = session.get("user_role")
