@@ -583,211 +583,85 @@ def logs():
         )
         
         if is_production:
-            # In production, try to show database logs
+            # In production, try to show database logs with maximum safety
             try:
                 db = get_db_connection()
                 cursor = db.cursor(dictionary=True)
                 
-                # Check if logs table exists
+                # Simple query to test if table exists
                 cursor.execute("SHOW TABLES LIKE 'app_logs'")
                 table_exists = cursor.fetchone()
                 
                 if table_exists:
-                    # Build query for all logs
-                    query = "SELECT * FROM app_logs WHERE 1=1"
-                    params = []
-                    
-                    # Add search filter
-                    if search_query:
-                        query += " AND (action LIKE %s OR user_email LIKE %s OR payload LIKE %s)"
-                        params.extend([f"%{search_query}%", f"%{search_query}%", f"%{search_query}%"])
-                    
-                    # Add severity filter (map to action types)
-                    if show_severity != "all":
-                        if show_severity.lower() == "error":
-                            query += " AND (action LIKE '%error%' OR action LIKE '%failed%')"
-                        elif show_severity.lower() == "warning":
-                            query += " AND (action LIKE '%warning%' OR action LIKE '%update%')"
-                        elif show_severity.lower() == "info":
-                            query += " AND (action LIKE '%login%' OR action LIKE '%created%' OR action LIKE '%updated%')"
-                        else:
-                            query += " AND action LIKE %s"
-                            params.append(f"%{show_severity}%")
-                    
-                    # Add date filters
-                    if date_from:
-                        query += " AND DATE(timestamp) >= %s"
-                        params.append(date_from)
-                    
-                    if date_to:
-                        query += " AND DATE(timestamp) <= %s"
-                        params.append(date_to)
-                    
-                    query += " ORDER BY timestamp DESC LIMIT 500"
-                    
-                    cursor.execute(query, params)
+                    # Very simple query to get logs
+                    cursor.execute("SELECT * FROM app_logs ORDER BY timestamp DESC LIMIT 10")
                     db_logs = cursor.fetchall()
                     
-                    # Convert to log entry format
+                    # Simple conversion with maximum error handling
                     for log_row in db_logs:
                         try:
-                            payload_data = {}
+                            # Create a simple, safe data structure
+                            simple_data = {
+                                'action': str(log_row.get('action', 'unknown')),
+                                'timestamp': str(log_row.get('timestamp', '')),
+                                'user_email': str(log_row.get('user_email', '')),
+                                'message': 'Log entry'
+                            }
+                            
+                            # Add payload if it exists and is simple
                             if log_row.get('payload'):
                                 try:
-                                    if isinstance(log_row['payload'], str):
-                                        payload_data = json.loads(log_row['payload'])
-                                    else:
-                                        payload_data = log_row['payload']
-                                except json.JSONDecodeError:
-                                    payload_data = {"raw_payload": str(log_row['payload'])}
-                                except Exception:
-                                    payload_data = {"parse_error": str(log_row['payload'])}
+                                    payload_str = str(log_row['payload'])
+                                    if len(payload_str) < 1000:  # Only include small payloads
+                                        simple_data['payload'] = payload_str
+                                except:
+                                    pass
                             
                             log_entries.append({
                                 'timestamp': log_row.get('timestamp'),
                                 'level': 'INFO',
-                                'data': {
-                                    'action': log_row.get('action', 'unknown'),
-                                    'user_id': log_row.get('user_id'),
-                                    'user_email': log_row.get('user_email'),
-                                    'user_role': log_row.get('user_role'),
-                                    'ip_address': log_row.get('ip_address'),
-                                    'user_agent': log_row.get('user_agent'),
-                                    **payload_data
-                                },
-                                'raw': f"{log_row.get('timestamp', '')} [INFO] {log_row.get('action', 'unknown')} | {log_row.get('payload', '')}"
+                                'data': simple_data,
+                                'raw': f"Log entry: {log_row.get('action', 'unknown')}"
                             })
                         except Exception as e:
-                            # Skip malformed entries but continue processing
-                            print(f"Skipping malformed log entry: {e}")
+                            # Skip any problematic entries
+                            print(f"Skipping log entry: {e}")
                             continue
                     
-                    total_count = len(db_logs)
+                    total_count = len(log_entries)
                 else:
-                    db_error = "app_logs table not found. Please run the SQL setup script."
+                    db_error = "app_logs table not found. Please create the table using the SQL setup script."
                 
                 cursor.close()
                 db.close()
                 
             except Exception as e:
-                db_error = f"Database error: {str(e)}"
+                db_error = f"Database connection error: {str(e)}"
                 print(f"Database error in logs: {e}")
                 
         else:
-            # Local development - read from log file
+            # Local development - simple file reading
             log_file_path = os.path.join(os.path.dirname(__file__), "app.log")
             if os.path.exists(log_file_path):
                 try:
                     with open(log_file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        raw_lines = f.readlines()
+                        lines = f.readlines()[:50]  # Only read first 50 lines
                     
-                    total_count = len(raw_lines)
-                    
-                    # Parse log lines
-                    for line in raw_lines:
+                    for line in lines:
                         line = line.strip()
-                        if not line:
-                            continue
-                        
-                        # Try to parse as structured log
-                        try:
-                            # Format: "2026-03-05 10:00:12,123 [INFO] message | {json_data}"
-                            if '|' in line and '[' in line:
-                                parts = line.split('|', 1)
-                                timestamp_part = parts[0].strip()
-                                data_part = parts[1].strip() if len(parts) > 1 else "{}"
-                                
-                                # Extract timestamp
-                                timestamp_str = timestamp_part.split('[')[0].strip()
-                                
-                                # Extract level
-                                level = "INFO"
-                                if '[' in timestamp_part and ']' in timestamp_part:
-                                    level_part = timestamp_part.split('[')[1].split(']')[0].strip()
-                                    if level_part:
-                                        level = level_part
-                                
-                                # Parse timestamp
-                                try:
-                                    timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S,%f")
-                                except:
-                                    timestamp = datetime.strptime(timestamp_str.split('.')[0], "%Y-%m-%d %H:%M:%S")
-                                
-                                # Try to parse data as JSON
-                                try:
-                                    data_json = json.loads(data_part) if data_part.startswith('{') else {"message": data_part}
-                                except:
-                                    data_json = {"message": data_part}
-                                
-                                log_entries.append({
-                                    'timestamp': timestamp,
-                                    'level': level,
-                                    'data': data_json,
-                                    'raw': line
-                                })
-                            else:
-                                # Fallback for unstructured lines
-                                timestamp = datetime.now()
-                                log_entries.append({
-                                    'timestamp': timestamp,
-                                    'level': 'INFO',
-                                    'data': {"message": line},
-                                    'raw': line
-                                })
-                        except Exception as e:
-                            # If parsing fails, treat as raw message
-                            timestamp = datetime.now()
+                        if line:
                             log_entries.append({
-                                'timestamp': timestamp,
+                                'timestamp': datetime.now(),
                                 'level': 'INFO',
-                                'data': {"message": line, "parse_error": str(e)},
+                                'data': {'message': line},
                                 'raw': line
                             })
+                    
+                    total_count = len(log_entries)
                 except Exception as e:
                     db_error = f"Error reading log file: {str(e)}"
-                    print(f"Error reading log file: {e}")
             else:
-                db_error = "Local log file not found. No logs available."
-        
-        # Apply additional filters for local logs
-        if not is_production and log_entries:
-            filtered_entries = []
-            for entry in log_entries:
-                # Search filter
-                if search_query:
-                    searchable_text = entry['raw'].lower()
-                    if search_query not in searchable_text:
-                        continue
-                
-                # Severity filter (for local logs, check level)
-                if show_severity != "all" and entry['level'].lower() != show_severity.lower():
-                    continue
-                
-                # Date filters
-                if date_from:
-                    try:
-                        from_date = datetime.strptime(date_from, "%Y-%m-%d")
-                        if entry['timestamp'].date() < from_date.date():
-                            continue
-                    except ValueError:
-                        pass
-                
-                if date_to:
-                    try:
-                        to_date = datetime.strptime(date_to, "%Y-%m-%d")
-                        if entry['timestamp'].date() > to_date.date():
-                            continue
-                    except ValueError:
-                        pass
-                
-                filtered_entries.append(entry)
-            
-            # Sort by timestamp (newest first)
-            filtered_entries.sort(key=lambda x: x['timestamp'], reverse=True)
-            
-            # Limit to 500 entries
-            log_entries = filtered_entries[:500]
-            total_count = len(filtered_entries)
+                db_error = "Local log file not found."
         
     except Exception as e:
         db_error = f"Unexpected error: {str(e)}"

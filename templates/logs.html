@@ -138,10 +138,20 @@
                   <tbody>
                     {% for entry in log_entries %}
                     <tr>
-                      <td class="text-nowrap">{{ entry.timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')[:23] if entry.timestamp else "—" }}</td>
+                      <td class="text-nowrap">
+                        {% if entry.timestamp %}
+                          {{ entry.timestamp.strftime('%Y-%m-%d %H:%M:%S') if entry.timestamp.strftime else entry.timestamp }}
+                        {% else %}
+                          No timestamp
+                        {% endif %}
+                      </td>
                       <td class="{% if not filters.wrap %}text-break{% endif %}">
                         {% if entry.data %}
-                          <pre class="mb-0{% if filters.wrap %} text-wrap{% endif %}" style="background: transparent; border: none; font-size: 12px; color: #6c757d;">{{ entry.data|tojson_pretty }}</pre>
+                          <div class="small" style="font-family: monospace;">
+                            {% for key, value in entry.data.items() %}
+                              <div><strong>{{ key }}:</strong> {{ value }}</div>
+                            {% endfor %}
+                          </div>
                         {% else %}
                           <span class="text-muted">No data available</span>
                         {% endif %}
