@@ -539,194 +539,128 @@ def download_logs():
 @login_required
 @role_required("super_admin", "admin")
 def logs():
-    import ast
-    import re
     from datetime import datetime
 
     # Get filter parameters
     search_query = request.args.get("search", "").strip().lower()
     date_from = request.args.get("date_from", "").strip()
     date_to = request.args.get("date_to", "").strip()
+    action_filter = request.args.get("action", "").strip()
 
     log_entries = []
-    total_lines = 0
-    filtered_entries = []
-    log_pattern = re.compile(
-        r"^(?P<timestamp>[^[]+)\s+\[(?P<level>[^\]]+)\]\s+(?P<event>\S+)\s*\|\s*(?P<payload>.*)$"
-    )
+    total_count = 0
 
     try:
-        # Check if we're in production (not local development)
-        is_production = (
-            os.getenv("RAILWAY_ENVIRONMENT") or 
-            os.getenv("DYNO") or 
-            os.getenv("DATABASE_URL") or
-            not os.getenv("FLASK_ENV") == "development"
-        )
+        db = get_db_connection()
+        cursor = db.cursor(dictionary=True)
         
-        # In Railway deployment, read logs from database
-        if is_production:
-            try:
-                db = get_db_connection()
-                cursor = db.cursor(dictionary=True)
-                
-                # Check if logs table exists
-                cursor.execute("SHOW TABLES LIKE 'app_logs'")
-                if cursor.fetchone():
-                    # Build query with filters
-                    query = "SELECT * FROM app_logs WHERE 1=1"
-                    params = []
-                    
-                    if search_query:
-                        query += " AND (action LIKE %s OR user_email LIKE %s OR payload LIKE %s)"
-                        params.extend([f"%{search_query}%", f"%{search_query}%", f"%{search_query}%"])
-                    
-                    if date_from:
-                        query += " AND DATE(timestamp) >= %s"
-                        params.append(date_from)
-                    
-                    if date_to:
-                        query += " AND DATE(timestamp) <= %s"
-                        params.append(date_to)
-                    
-                    query += " ORDER BY timestamp DESC LIMIT 500"
-                    
-                    cursor.execute(query, params)
-                    db_logs = cursor.fetchall()
-                    
-                    # Convert database logs to expected format
-                    for log_row in db_logs:
-                        entry = {
-                            "timestamp": log_row["timestamp"].strftime("%Y-%m-%d %H:%M:%S,%f")[:-3],
-                            "level": "INFO",
-                            "event": log_row["action"],
-                            "meta": {
-                                "user_id": log_row["user_id"],
-                                "email": log_row["user_email"],
-                                "role": log_row["user_role"],
-                                "ip": log_row["ip_address"],
-                                "ua": log_row["user_agent"]
-                            }
-                        }
-                        if log_row["payload"]:
-                            try:
-                                import json
-                                entry["meta"].update(json.loads(log_row["payload"]))
-                            except:
-                                pass
-                        log_entries.append(entry)
-                    
-                    total_lines = len(db_logs)
-                else:
-                    log_entries = []
-                    total_lines = 0
-                
-                cursor.close()
-                db.close()
-            except Exception as e:
-                log_entries = []
-                total_lines = 0
-        elif os.path.exists(os.path.join(os.path.dirname(__file__), "app.log")):
-            # Local development - read from log file
-            with open(os.path.join(os.path.dirname(__file__), "app.log"), "r", encoding="utf-8", errors="ignore") as f:
-                raw_lines = f.readlines()
-            total_lines = len(raw_lines)
-            # Show the most recent 1000 lines for filtering, newest first
-            for raw in reversed(raw_lines[-1000:]):
-                line = raw.rstrip("\n")
-                entry = {"raw": line}
-                match = log_pattern.match(line)
-                if match:
-                    entry["timestamp"] = match.group("timestamp").strip()
-                    entry["level"] = match.group("level").strip()
-                    entry["event"] = match.group("event").strip()
-                    payload = match.group("payload").strip()
-                    if payload:
-                        try:
-                            # Our logs usually end with a Python dict literal
-                            meta = ast.literal_eval(payload)
-                            if isinstance(meta, dict):
-                                entry["meta"] = meta
-                        except Exception:
-                            pass
-                log_entries.append(entry)
-        else:
-            # No log file found
-            log_entries = []
-            total_lines = 0
-    except Exception:
-        log_entries = []
-
-    # Apply filters
-    for entry in log_entries:
-        # Search filter - check if search query exists in any field
-        if search_query:
-            searchable_text = ""
-            if entry.get("event"):
-                searchable_text += entry["event"].lower() + " "
-            if entry.get("level"):
-                searchable_text += entry["level"].lower() + " "
-            if entry.get("raw"):
-                searchable_text += entry["raw"].lower() + " "
-            if entry.get("meta"):
-                for key, value in entry["meta"].items():
-                    if value:
-                        searchable_text += str(value).lower() + " "
+        # Check if logs table exists
+        cursor.execute("SHOW TABLES LIKE 'app_logs'")
+        if cursor.fetchone():
+            # Build query for user activities only
+            query = """
+                SELECT al.*, 
+                       u.first_name, u.last_name, u.role as user_role_display,
+                       u.email as user_email_display
+                FROM app_logs al
+                LEFT JOIN users u ON al.user_id = u.idusers
+                WHERE al.action IN (
+                    'user_login', 'user_logout', 'user_created', 'user_updated', 'user_deleted',
+                    'ticket_created', 'ticket_updated', 'ticket_deleted', 'ticket_viewed',
+                    'tickets_export_date_csv', 'tickets_export_all_csv'
+                )
+            """
+            params = []
             
-            if search_query not in searchable_text:
-                continue
+            # Add search filter
+            if search_query:
+                query += " AND (al.action LIKE %s OR al.user_email LIKE %s OR u.first_name LIKE %s OR u.last_name LIKE %s OR al.payload LIKE %s)"
+                params.extend([f"%{search_query}%", f"%{search_query}%", f"%{search_query}%", f"%{search_query}%", f"%{search_query}%"])
+            
+            # Add action filter
+            if action_filter:
+                query += " AND al.action = %s"
+                params.append(action_filter)
+            
+            # Add date filters
+            if date_from:
+                query += " AND DATE(al.timestamp) >= %s"
+                params.append(date_from)
+            
+            if date_to:
+                query += " AND DATE(al.timestamp) <= %s"
+                params.append(date_to)
+            
+            # Order by most recent first
+            query += " ORDER BY al.timestamp DESC LIMIT 500"
+            
+            cursor.execute(query, params)
+            log_entries = cursor.fetchall()
+            
+            # Get total count
+            count_query = """
+                SELECT COUNT(*) as total
+                FROM app_logs al
+                LEFT JOIN users u ON al.user_id = u.idusers
+                WHERE al.action IN (
+                    'user_login', 'user_logout', 'user_created', 'user_updated', 'user_deleted',
+                    'ticket_created', 'ticket_updated', 'ticket_deleted', 'ticket_viewed',
+                    'tickets_export_date_csv', 'tickets_export_all_csv'
+                )
+            """
+            count_params = []
+            
+            if search_query:
+                count_query += " AND (al.action LIKE %s OR al.user_email LIKE %s OR u.first_name LIKE %s OR u.last_name LIKE %s OR al.payload LIKE %s)"
+                count_params.extend([f"%{search_query}%", f"%{search_query}%", f"%{search_query}%", f"%{search_query}%", f"%{search_query}%"])
+            
+            if action_filter:
+                count_query += " AND al.action = %s"
+                count_params.append(action_filter)
+            
+            if date_from:
+                count_query += " AND DATE(al.timestamp) >= %s"
+                count_params.append(date_from)
+            
+            if date_to:
+                count_query += " AND DATE(al.timestamp) <= %s"
+                count_params.append(date_to)
+            
+            cursor.execute(count_query, count_params)
+            total_count = cursor.fetchone()['total']
+            
+        else:
+            # No logs table found
+            log_entries = []
+            total_count = 0
+        
+        cursor.close()
+        db.close()
+        
+    except Exception as e:
+        print(f"Error fetching logs: {e}")
+        log_entries = []
+        total_count = 0
 
-        # Date filters
-        if date_from or date_to:
-            try:
-                # Parse timestamp from log entry
-                timestamp_str = entry.get("timestamp", "")
-                if timestamp_str:
-                    # Handle different timestamp formats
-                    for fmt in ["%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M:%S,%f"]:
-                        try:
-                            entry_date = datetime.strptime(timestamp_str.split()[0] + " " + timestamp_str.split()[1], fmt)
-                            break
-                        except (ValueError, IndexError):
-                            continue
-                    else:
-                        # If parsing fails, skip date filtering for this entry
-                        entry_date = None
-                    
-                    if entry_date:
-                        if date_from:
-                            try:
-                                from_date = datetime.strptime(date_from, "%Y-%m-%d")
-                                if entry_date.date() < from_date.date():
-                                    continue
-                            except ValueError:
-                                pass
-                        
-                        if date_to:
-                            try:
-                                to_date = datetime.strptime(date_to, "%Y-%m-%d")
-                                if entry_date.date() > to_date.date():
-                                    continue
-                            except ValueError:
-                                pass
-            except Exception:
-                pass
-
-        filtered_entries.append(entry)
-
-    # Limit displayed results to 500 after filtering
-    filtered_entries = filtered_entries[:500]
+    # Get available actions for filter dropdown
+    available_actions = [
+        'user_login', 'user_logout', 'user_created', 'user_updated', 'user_deleted',
+        'ticket_created', 'ticket_updated', 'ticket_deleted', 'ticket_viewed',
+        'tickets_export_date_csv', 'tickets_export_all_csv'
+    ]
 
     return render_template(
         "logs.html",
         active_page="logs",
-        log_entries=filtered_entries,
-        total_log_lines=total_lines,
+        log_entries=log_entries,
+        total_log_lines=total_count,
         filters={
             "search": search_query,
             "date_from": date_from,
-            "date_to": date_to
-        }
+            "date_to": date_to,
+            "action": action_filter
+        },
+        available_actions=available_actions
     )
 
 
