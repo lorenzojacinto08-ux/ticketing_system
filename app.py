@@ -369,6 +369,8 @@ def backups():
     selected_date_str = request.args.get("date", "")
     download = request.args.get("download") == "1"
     export_all = request.args.get("all") == "1"
+    status_filter = request.args.get("status", "").strip()
+    store_filter = request.args.get("store", "").strip()
 
     entries = []
     filter_error = None
@@ -397,10 +399,23 @@ def backups():
                 if not date_col:
                     filter_error = "No date column found on the entries table."
                 else:
-                    cursor.execute(
-                        f"SELECT * FROM entries WHERE DATE({date_col}) = %s ORDER BY {date_col} DESC",
-                        (selected_date_str,),
-                    )
+                    # Build query with filters
+                    query = f"SELECT * FROM entries WHERE DATE({date_col}) = %s"
+                    params = [selected_date_str]
+                    
+                    # Add status filter
+                    if status_filter:
+                        query += " AND status = %s"
+                        params.append(status_filter)
+                    
+                    # Add store name filter
+                    if store_filter:
+                        query += " AND store_name LIKE %s"
+                        params.append(f"%{store_filter}%")
+                    
+                    query += f" ORDER BY {date_col} DESC"
+                    
+                    cursor.execute(query, params)
                     entries = cursor.fetchall()
             finally:
                 cursor.close()
@@ -460,7 +475,13 @@ def backups():
         csv_data = output.getvalue()
         output.close()
 
-        filename = f"tickets-{selected_date_str}.csv"
+        # Generate filename with filters
+        filename_parts = ["tickets", selected_date_str]
+        if status_filter:
+            filename_parts.append(f"status-{status_filter}")
+        if store_filter:
+            filename_parts.append(f"store-{store_filter.lower().replace(' ', '-')}")
+        filename = "-".join(filename_parts) + ".csv"
         log_event("tickets_export_date_csv", selected_date=selected_date_str)
         response = Response(csv_data, mimetype="text/csv")
         response.headers["Content-Disposition"] = f"attachment; filename={filename}"
@@ -472,6 +493,8 @@ def backups():
         entries=entries,
         selected_date=selected_date_str,
         filter_error=filter_error,
+        status_filter=status_filter,
+        store_filter=store_filter,
     )
 
 
