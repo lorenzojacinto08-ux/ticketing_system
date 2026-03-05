@@ -53,58 +53,6 @@ app.logger.addHandler(_log_handler)
 ROLES = ("super_admin", "admin", "end_user")
 
 
-def log_transaction(action_type, table_name, record_id=None, old_values=None, new_values=None, description=""):
-    """
-    Log a transaction with user details and change information
-    """
-    try:
-        user_id = session.get("user_id")
-        user_email = session.get("user_email")
-        user_role = session.get("user_role")
-        ip = request.remote_addr
-        ua = request.headers.get("User-Agent", "")
-        
-        db = get_db_connection()
-        cursor = db.cursor()
-        
-        # Create transactions table if it doesn't exist
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS transactions (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                user_id INT,
-                user_email VARCHAR(255),
-                user_role VARCHAR(50),
-                action_type VARCHAR(50) NOT NULL,
-                table_name VARCHAR(50) NOT NULL,
-                record_id INT,
-                old_values JSON,
-                new_values JSON,
-                description TEXT,
-                ip_address VARCHAR(45),
-                user_agent TEXT
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-        """)
-        
-        # Insert transaction record
-        cursor.execute("""
-            INSERT INTO transactions (user_id, user_email, user_role, action_type, table_name, record_id, old_values, new_values, description, ip_address, user_agent)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (
-            user_id, user_email, user_role, action_type, table_name, record_id,
-            json.dumps(old_values) if old_values else None,
-            json.dumps(new_values) if new_values else None,
-            description, ip, ua
-        ))
-        
-        db.commit()
-        cursor.close()
-        db.close()
-        
-    except Exception as e:
-        print(f"Error logging transaction: {e}")
-
-
 def _is_active(val):
     """Treat is_active from DB (may be VARCHAR '0'/'1' or int) as boolean."""
     if val is None:
@@ -503,123 +451,6 @@ def backups():
         filter_error=filter_error,
         status_filter=status_filter,
         store_filter=store_filter,
-    )
-
-
-@app.route("/transactions")
-@login_required
-@role_required("super_admin", "admin")
-def transactions():
-    # Get filter parameters
-    user_filter = request.args.get("user", "").strip()
-    action_filter = request.args.get("action", "").strip()
-    table_filter = request.args.get("table", "").strip()
-    date_from = request.args.get("date_from", "").strip()
-    date_to = request.args.get("date_to", "").strip()
-
-    try:
-        db = get_db_connection()
-        cursor = db.cursor(dictionary=True)
-        
-        # Create transactions table if it doesn't exist
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS transactions (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                user_id INT,
-                user_email VARCHAR(255),
-                user_role VARCHAR(50),
-                action_type VARCHAR(50) NOT NULL,
-                table_name VARCHAR(50) NOT NULL,
-                record_id INT,
-                old_values JSON,
-                new_values JSON,
-                description TEXT,
-                ip_address VARCHAR(45),
-                user_agent TEXT
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-        """)
-        
-        # Get unique users for filter dropdown
-        cursor.execute("""
-            SELECT DISTINCT user_email, user_role 
-            FROM transactions 
-            WHERE user_email IS NOT NULL 
-            ORDER BY user_email
-        """)
-        users = cursor.fetchall()
-        
-        # Build query for transactions
-        query = "SELECT * FROM transactions WHERE 1=1"
-        params = []
-        
-        if user_filter:
-            query += " AND user_email = %s"
-            params.append(user_filter)
-        
-        if action_filter:
-            query += " AND action_type = %s"
-            params.append(action_filter)
-        
-        if table_filter:
-            query += " AND table_name = %s"
-            params.append(table_filter)
-        
-        if date_from:
-            query += " AND DATE(timestamp) >= %s"
-            params.append(date_from)
-        
-        if date_to:
-            query += " AND DATE(timestamp) <= %s"
-            params.append(date_to)
-        
-        query += " ORDER BY timestamp DESC LIMIT 500"
-        
-        cursor.execute(query, params)
-        transactions = cursor.fetchall()
-        
-        # Get total count
-        count_query = "SELECT COUNT(*) as total FROM transactions WHERE 1=1"
-        count_params = []
-        
-        if user_filter:
-            count_query += " AND user_email = %s"
-            count_params.append(user_filter)
-        
-        if action_filter:
-            count_query += " AND action_type = %s"
-            count_params.append(action_filter)
-        
-        if table_filter:
-            count_query += " AND table_name = %s"
-            count_params.append(table_filter)
-        
-        if date_from:
-            count_query += " AND DATE(timestamp) >= %s"
-            count_params.append(date_from)
-        
-        if date_to:
-            count_query += " AND DATE(timestamp) <= %s"
-            count_params.append(date_to)
-        
-        cursor.execute(count_query, count_params)
-        total_count = cursor.fetchone()['total']
-        
-        cursor.close()
-        db.close()
-        
-    except Exception as e:
-        print(f"Error fetching transactions: {e}")
-        transactions = []
-        users = []
-        total_count = 0
-
-    return render_template(
-        "transactions.html",
-        active_page="transactions",
-        transactions=transactions,
-        users=users,
-        total_count=total_count
     )
 
 
@@ -1052,18 +883,6 @@ def add_ticket():
                 cursor.execute(sql, insert_params)
                 db.commit()
                 ticket_pk = cursor.lastrowid
-                
-                # Log transaction
-                new_values = {
-                    'ticket_no': ticket_pk,
-                    'store_name': name,
-                    'subject': subject,
-                    'status': status,
-                    'contact_number': contact_number,
-                    'email': email
-                }
-                log_transaction('create', 'tickets', ticket_pk, None, new_values, f"Created ticket #{ticket_pk} for {name}")
-                
                 flash("Ticket added successfully.", "success")
             finally:
                 cursor.close()
@@ -1196,38 +1015,6 @@ def edit_ticket(ticket_id):
             else:
                 old_status_val = "pending"
 
-            # Log transaction
-            old_values = {
-                'store_name': old_name,
-                'subject': old_subject,
-                'status': old_status_val,
-                'contact_number': old_contact,
-                'email': old_email
-            }
-            new_values = {
-                'store_name': name,
-                'subject': subject,
-                'status': status,
-                'contact_number': contact_number,
-                'email': email
-            }
-            
-            # Determine what changed
-            changes = []
-            if old_name != name:
-                changes.append(f"store: {old_name} → {name}")
-            if old_subject != subject:
-                changes.append(f"subject: {old_subject} → {subject}")
-            if old_status_val != status:
-                changes.append(f"status: {old_status_val} → {status}")
-            if old_contact != contact_number:
-                changes.append(f"contact: {old_contact} → {contact_number}")
-            if old_email != email:
-                changes.append(f"email: {old_email} → {email}")
-            
-            description = f"Updated ticket #{ticket_id}: " + ", ".join(changes) if changes else f"Updated ticket #{ticket_id}"
-            log_transaction('update', 'tickets', ticket_id, old_values, new_values, description)
-
             flash("Ticket updated successfully.", "success")
             return redirect(url_for("home", _anchor="tickets"))
 
@@ -1314,18 +1101,6 @@ def delete_ticket(ticket_id):
         entry = cursor.fetchone()
         cursor.execute(f"DELETE FROM entries WHERE {pk_col} = %s", (ticket_id,))
         db.commit()
-        
-        # Log transaction
-        old_values = {
-            'ticket_no': ticket_id,
-            'store_name': entry.get("store_name") or entry.get("Name"),
-            'subject': entry.get("subject") or entry.get("Concern") or entry.get("concern"),
-            'status': entry.get("status") or entry.get("Status"),
-            'contact_number': entry.get("contact_number"),
-            'email': entry.get("email") or entry.get("Email")
-        }
-        description = f"Deleted ticket #{ticket_id} for {old_values['store_name']}"
-        log_transaction('delete', 'tickets', ticket_id, old_values, None, description)
         flash("Ticket deleted successfully.", "success")
     except Exception as e:
         db.rollback()
