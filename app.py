@@ -170,8 +170,19 @@ app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-change-me")
 @app.template_filter('tojson_pretty')
 def tojson_pretty(value):
     """Pretty print JSON for template display"""
-    import json
-    return json.dumps(value, indent=2, ensure_ascii=False)
+    try:
+        import json
+        if isinstance(value, str):
+            # Try to parse string as JSON first
+            try:
+                parsed = json.loads(value)
+                return json.dumps(parsed, indent=2, ensure_ascii=False)
+            except:
+                return value
+        else:
+            return json.dumps(value, indent=2, ensure_ascii=False)
+    except Exception:
+        return str(value)
 
 # Function to get a fresh DB connection
 def get_db_connection():

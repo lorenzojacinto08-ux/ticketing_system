@@ -141,7 +141,7 @@
                       <td class="text-nowrap">{{ entry.timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3] if entry.timestamp else "—" }}</td>
                       <td class="{% if not filters.wrap %}text-break{% endif %}">
                         {% if entry.data %}
-                          <pre class="mb-0{% if filters.wrap %} text-wrap{% endif %}" style="background: transparent; border: none; font-size: 12px; color: #6c757d;">{{ entry.data|tojson_pretty if entry.data is mapping else entry.data|tojson }}</pre>
+                          <pre class="mb-0{% if filters.wrap %} text-wrap{% endif %}" style="background: transparent; border: none; font-size: 12px; color: #6c757d;">{{ entry.data|tojson_pretty }}</pre>
                         {% else %}
                           <span class="text-muted">—</span>
                         {% endif %}
