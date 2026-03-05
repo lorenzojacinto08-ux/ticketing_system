@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, Response, session, flash
+from flask import Flask, render_template, request, redirect, url_for, Response, session, flash, jsonify
 import mysql.connector
 from datetime import datetime
 import csv
@@ -881,8 +881,26 @@ def add_ticket():
 
                 sql = f"INSERT INTO entries ({', '.join(insert_cols)}) VALUES ({', '.join(insert_sql_values)})"
                 cursor.execute(sql, insert_params)
-                db.commit()
                 ticket_pk = cursor.lastrowid
+                
+                # Update company history if a company name was provided
+                if name:
+                    try:
+                        cursor.execute(
+                            """
+                            INSERT INTO company_history (company_name, usage_count, last_used)
+                            VALUES (%s, 1, NOW())
+                            ON DUPLICATE KEY UPDATE 
+                            usage_count = usage_count + 1,
+                            last_used = NOW()
+                            """,
+                            (name,)
+                        )
+                    except Exception:
+                        # Ignore errors if company_history table doesn't exist yet
+                        pass
+                
+                db.commit()
                 flash("Ticket added successfully.", "success")
             finally:
                 cursor.close()
@@ -906,6 +924,58 @@ def add_ticket():
         next_jo = None
 
     return render_template("add_ticket.html", active_page="add_ticket", next_jo=next_jo)
+
+
+@app.route("/api/companies/suggest")
+@login_required
+def suggest_companies():
+    """API endpoint to suggest company names based on partial input"""
+    query = request.args.get("q", "").strip()
+    
+    if not query or len(query) < 2:
+        return jsonify([])
+    
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        # Search for companies that start with the query, ordered by usage count and last used
+        cursor.execute(
+            """
+            SELECT company_name, usage_count, last_used
+            FROM company_history 
+            WHERE company_name LIKE %s
+            ORDER BY usage_count DESC, last_used DESC
+            LIMIT 10
+            """,
+            (f"{query}%",)
+        )
+        companies = cursor.fetchall()
+        
+        # Also search for companies that contain the query (but don't start with it)
+        cursor.execute(
+            """
+            SELECT company_name, usage_count, last_used
+            FROM company_history 
+            WHERE company_name LIKE %s AND company_name NOT LIKE %s
+            ORDER BY usage_count DESC, last_used DESC
+            LIMIT 5
+            """,
+            (f"%{query}%", f"{query}%")
+        )
+        additional_companies = cursor.fetchall()
+        
+        # Combine results, prioritizing exact matches
+        all_companies = companies + additional_companies
+        
+        return jsonify([{
+            "name": company["company_name"],
+            "usage_count": company["usage_count"],
+            "last_used": company["last_used"].isoformat() if company["last_used"] else None
+        } for company in all_companies])
+        
+    finally:
+        cursor.close()
+        db.close()
 
 
 @app.route("/tickets/<int:ticket_id>/edit", methods=["GET", "POST"])
