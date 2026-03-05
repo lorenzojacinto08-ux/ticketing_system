@@ -580,10 +580,77 @@ def logs():
         )
         
         if is_production:
-            # In production, read from Railway logs (stdout/stderr)
-            # For now, we'll show a message since Railway logs are in dashboard
-            log_entries = []
-            total_count = 0
+            # In production, show database logs only
+            try:
+                db = get_db_connection()
+                cursor = db.cursor(dictionary=True)
+                
+                # Check if logs table exists
+                cursor.execute("SHOW TABLES LIKE 'app_logs'")
+                if cursor.fetchone():
+                    # Build query for all logs
+                    query = "SELECT * FROM app_logs WHERE 1=1"
+                    params = []
+                    
+                    # Add search filter
+                    if search_query:
+                        query += " AND (action LIKE %s OR user_email LIKE %s OR payload LIKE %s)"
+                        params.extend([f"%{search_query}%", f"%{search_query}%", f"%{search_query}%"])
+                    
+                    # Add severity filter (map to action types)
+                    if show_severity != "all":
+                        if show_severity.lower() == "error":
+                            query += " AND (action LIKE '%error%' OR action LIKE '%failed%')"
+                        elif show_severity.lower() == "warning":
+                            query += " AND (action LIKE '%warning%' OR action LIKE '%update%')"
+                        elif show_severity.lower() == "info":
+                            query += " AND (action LIKE '%login%' OR action LIKE '%created%' OR action LIKE '%updated%')"
+                        else:
+                            query += " AND action LIKE %s"
+                            params.append(f"%{show_severity}%")
+                    
+                    # Add date filters
+                    if date_from:
+                        query += " AND DATE(timestamp) >= %s"
+                        params.append(date_from)
+                    
+                    if date_to:
+                        query += " AND DATE(timestamp) <= %s"
+                        params.append(date_to)
+                    
+                    query += " ORDER BY timestamp DESC LIMIT 500"
+                    
+                    cursor.execute(query, params)
+                    db_logs = cursor.fetchall()
+                    
+                    # Convert to log entry format
+                    for log_row in db_logs:
+                        log_entries.append({
+                            'timestamp': log_row['timestamp'],
+                            'level': 'INFO',
+                            'data': {
+                                'action': log_row['action'],
+                                'user_id': log_row['user_id'],
+                                'user_email': log_row['user_email'],
+                                'user_role': log_row['user_role'],
+                                'ip_address': log_row['ip_address'],
+                                'user_agent': log_row['user_agent'],
+                                **(json.loads(log_row['payload']) if log_row['payload'] else {})
+                            },
+                            'raw': f"{log_row['timestamp']} [{log_row.get('level', 'INFO')}] {log_row['action']} | {log_row['payload']}"
+                        })
+                    
+                    total_count = len(db_logs)
+                else:
+                    log_entries = []
+                    total_count = 0
+                
+                cursor.close()
+                db.close()
+            except Exception as e:
+                print(f"Error fetching database logs: {e}")
+                log_entries = []
+                total_count = 0
         else:
             # Local development - read from log file
             log_file_path = os.path.join(os.path.dirname(__file__), "app.log")
@@ -657,44 +724,45 @@ def logs():
                 log_entries = []
                 total_count = 0
         
-        # Apply filters
-        filtered_entries = []
-        for entry in log_entries:
-            # Search filter
-            if search_query:
-                searchable_text = entry['raw'].lower()
-                if search_query not in searchable_text:
+        # Apply additional filters for local logs
+        if not is_production and log_entries:
+            filtered_entries = []
+            for entry in log_entries:
+                # Search filter
+                if search_query:
+                    searchable_text = entry['raw'].lower()
+                    if search_query not in searchable_text:
+                        continue
+                
+                # Severity filter (for local logs, check level)
+                if show_severity != "all" and entry['level'].lower() != show_severity.lower():
                     continue
+                
+                # Date filters
+                if date_from:
+                    try:
+                        from_date = datetime.strptime(date_from, "%Y-%m-%d")
+                        if entry['timestamp'].date() < from_date.date():
+                            continue
+                    except ValueError:
+                        pass
+                
+                if date_to:
+                    try:
+                        to_date = datetime.strptime(date_to, "%Y-%m-%d")
+                        if entry['timestamp'].date() > to_date.date():
+                            continue
+                    except ValueError:
+                        pass
+                
+                filtered_entries.append(entry)
             
-            # Severity filter
-            if show_severity != "all" and entry['level'].lower() != show_severity.lower():
-                continue
+            # Sort by timestamp (newest first)
+            filtered_entries.sort(key=lambda x: x['timestamp'], reverse=True)
             
-            # Date filters
-            if date_from:
-                try:
-                    from_date = datetime.strptime(date_from, "%Y-%m-%d")
-                    if entry['timestamp'].date() < from_date.date():
-                        continue
-                except ValueError:
-                    pass
-            
-            if date_to:
-                try:
-                    to_date = datetime.strptime(date_to, "%Y-%m-%d")
-                    if entry['timestamp'].date() > to_date.date():
-                        continue
-                except ValueError:
-                    pass
-            
-            filtered_entries.append(entry)
-        
-        # Sort by timestamp (newest first)
-        filtered_entries.sort(key=lambda x: x['timestamp'], reverse=True)
-        
-        # Limit to 500 entries
-        log_entries = filtered_entries[:500]
-        total_count = len(filtered_entries)
+            # Limit to 500 entries
+            log_entries = filtered_entries[:500]
+            total_count = len(filtered_entries)
         
     except Exception as e:
         print(f"Error reading logs: {e}")
