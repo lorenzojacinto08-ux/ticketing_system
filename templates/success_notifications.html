@@ -1,0 +1,126 @@
+<!-- Success Notification System -->
+<style>
+.success-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 16px 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(40, 167, 69, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 9999;
+    animation: slideIn 0.3s ease-out;
+    max-width: 350px;
+    font-size: 14px;
+}
+
+.success-toast i {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.success-toast .toast-content {
+    flex: 1;
+}
+
+.success-toast .toast-title {
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.success-toast .toast-message {
+    opacity: 0.9;
+    font-size: 13px;
+}
+
+.success-toast .toast-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.success-toast .toast-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.toast-exit {
+    animation: slideOut 0.3s ease-out forwards;
+}
+</style>
+
+<script>
+// Success notification function
+function showSuccessToast(title, message, icon = 'check-circle-fill') {
+    const toast = document.createElement('div');
+    toast.className = 'success-toast';
+    toast.innerHTML = `
+        <i class="bi bi-${icon}"></i>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        toast.classList.add('toast-exit');
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, 300);
+    }, 5000);
+}
+
+// Show success toasts for flash messages
+document.addEventListener('DOMContentLoaded', function() {
+    const flashMessages = document.querySelectorAll('.alert-success');
+    flashMessages.forEach(function(alert) {
+        const message = alert.textContent.trim();
+        if (message.includes('created') || message.includes('added')) {
+            showSuccessToast('Success!', message, 'plus-circle-fill');
+        } else if (message.includes('updated') || message.includes('modified')) {
+            showSuccessToast('Updated!', message, 'pencil-fill');
+        } else if (message.includes('deleted') || message.includes('removed')) {
+            showSuccessToast('Deleted!', message, 'trash-fill');
+        } else {
+            showSuccessToast('Success!', message, 'check-circle-fill');
+        }
+        // Hide the original flash message
+        alert.style.display = 'none';
+    });
+});
+</script>
