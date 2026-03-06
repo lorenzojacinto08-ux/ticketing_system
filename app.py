@@ -363,17 +363,41 @@ def home():
     if "user_id" not in session:
         return redirect(url_for("login"))
     
+    # Add cache control headers to prevent caching
+    response_headers = {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+    }
+    
     db = get_db_connection()  # new connection per request
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM entries ORDER BY date DESC")
+    
+    # Use a more robust query that handles different column names and ordering
+    cursor.execute("""
+        SELECT *, 
+               COALESCE(date, NOW()) as sort_date
+        FROM entries 
+        ORDER BY sort_date DESC
+    """)
     entries = cursor.fetchall()
     cursor.close()
     db.close()  # close connection after use
-    return render_template(
+    
+    # Debug: Print number of entries found
+    print(f"DEBUG: Found {len(entries)} entries for home page")
+    
+    response = render_template(
         "index.html",
         entries=entries,
         active_page="home",
     )
+    
+    # Add headers to response
+    for header, value in response_headers.items():
+        response.headers[header] = value
+    
+    return response
 
 
 @app.route("/dashboard")
@@ -1480,8 +1504,11 @@ def add_ticket():
         if status not in {"pending", "ongoing", "completed", "complete", "in progress", "in_progress"}:
             status = "pending"
 
-        # Debug: Print form data
+        # Debug: Print form data and environment
         print(f"DEBUG: Form data received - name: {name}, subject: {subject}, concern: {reported_concern}")
+        print(f"DEBUG: Environment - RAILWAY_ENVIRONMENT: {os.getenv('RAILWAY_ENVIRONMENT')}")
+        print(f"DEBUG: Database URL present: {'Yes' if os.getenv('DATABASE_URL') else 'No'}")
+        print(f"DEBUG: DB_HOST: {os.getenv('DB_HOST')}, DB_NAME: {os.getenv('DB_NAME')}")
 
         # Require the core fields that map to your schema
         # Name, subject, and concern are always required; for contact, allow either
@@ -1490,6 +1517,7 @@ def add_ticket():
             db = get_db_connection()
             cursor = db.cursor(dictionary=True)
             try:
+                print("DEBUG: Database connection established")
                 cursor.execute("SHOW COLUMNS FROM entries")
                 cols = {row[0] for row in cursor.fetchall()}
                 print(f"DEBUG: Available columns: {cols}")
@@ -1499,6 +1527,8 @@ def add_ticket():
                     # Always auto-generate JO per new ticket (can still be edited later).
                     job_order = compute_next_job_order(cursor, jo_col)
                     print(f"DEBUG: Generated JO: {job_order}")
+                else:
+                    print("DEBUG: No JO column found")
 
                 insert_cols = []
                 insert_sql_values = []
@@ -1533,8 +1563,12 @@ def add_ticket():
                     (c for c in ("reported_concern", "reportedConcern", "concern", "details", "description") if c in cols),
                     None,
                 )
+                print(f"DEBUG: Concern column resolved to: {concern_col}")
                 if concern_col:
                     add_param_col(concern_col, reported_concern)
+                    print(f"DEBUG: Added concern to {concern_col}: {reported_concern}")
+                else:
+                    print("DEBUG: WARNING - No concern column found!")
 
                 if "assigned_it" in cols:
                     # Keep legacy schema working: if there's no separate concern column,
@@ -1567,6 +1601,7 @@ def add_ticket():
                 sql = f"INSERT INTO entries ({', '.join(insert_cols)}) VALUES ({', '.join(insert_sql_values)})"
                 print(f"DEBUG: SQL: {sql}")
                 print(f"DEBUG: Params: {insert_params}")
+                print(f"DEBUG: Insert columns: {insert_cols}")
                 
                 cursor.execute(sql, insert_params)
                 ticket_pk = cursor.lastrowid
@@ -1585,6 +1620,7 @@ def add_ticket():
                             """,
                             (name,)
                         )
+                        print("DEBUG: Company history updated")
                     except Exception as e:
                         print(f"DEBUG: Company history error: {e}")
                         # Ignore errors if company_history table doesn't exist yet
@@ -1600,7 +1636,7 @@ def add_ticket():
             finally:
                 cursor.close()
                 db.close()
-            return redirect(url_for("home", _anchor="tickets"))
+            return redirect(url_for("home"))
         else:
             flash("Please fill in all required fields.", "error")
     
@@ -1784,7 +1820,7 @@ def handle_csv_upload():
         flash(f'Error processing CSV file: {str(e)}', 'danger')
         return redirect(url_for('add_ticket'))
     
-    return redirect(url_for('home', _anchor="tickets"))
+    return redirect(url_for('home'))
 
 
 @app.route("/download-csv-template")
