@@ -93,43 +93,6 @@ def run_migrations():
         else:
             print("✅ labor_fee column already exists")
         
-        # Check if company_history table exists
-        cursor.execute("SHOW TABLES LIKE 'company_history'")
-        if not cursor.fetchone():
-            print("Creating company_history table...")
-            cursor.execute("""
-                CREATE TABLE `company_history` (
-                  `id` int NOT NULL AUTO_INCREMENT,
-                  `company_name` varchar(100) NOT NULL,
-                  `usage_count` int NOT NULL DEFAULT 1,
-                  `last_used` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                  PRIMARY KEY (`id`),
-                  UNIQUE KEY `unique_company_name` (`company_name`),
-                  KEY `idx_company_name` (`company_name`),
-                  KEY `idx_usage_count` (`usage_count`),
-                  KEY `idx_last_used` (`last_used`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-            """)
-            print("✅ Added company_history table")
-            
-            # Populate the table with existing company names from the entries table
-            print("Populating company_history table...")
-            cursor.execute("""
-                INSERT IGNORE INTO `company_history` (company_name, usage_count, last_used)
-                SELECT 
-                    store_name as company_name,
-                    COUNT(*) as usage_count,
-                    MAX(date) as last_used
-                FROM entries 
-                WHERE store_name IS NOT NULL AND store_name != ''
-                GROUP BY store_name
-                ORDER BY usage_count DESC, last_used DESC
-            """)
-            print("✅ Populated company_history table with existing data")
-        else:
-            print("✅ company_history table already exists")
-        
         db.commit()
         cursor.close()
         db.close()
