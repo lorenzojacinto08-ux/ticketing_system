@@ -171,37 +171,6 @@ def run_migrations():
         if not cursor.fetchone():
             cursor.execute("ALTER TABLE entries ADD COLUMN labor_fee DECIMAL(10, 2) DEFAULT NULL AFTER service_done")
         
-        # Check if company_history table exists
-        cursor.execute("SHOW TABLES LIKE 'company_history'")
-        if not cursor.fetchone():
-            cursor.execute("""
-                CREATE TABLE `company_history` (
-                  `id` int NOT NULL AUTO_INCREMENT,
-                  `company_name` varchar(100) NOT NULL,
-                  `usage_count` int NOT NULL DEFAULT 1,
-                  `last_used` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                  PRIMARY KEY (`id`),
-                  UNIQUE KEY `unique_company_name` (`company_name`),
-                  KEY `idx_company_name` (`company_name`),
-                  KEY `idx_usage_count` (`usage_count`),
-                  KEY `idx_last_used` (`last_used`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-            """)
-            
-            # Populate the table with existing company names from the entries table
-            cursor.execute("""
-                INSERT IGNORE INTO `company_history` (company_name, usage_count, last_used)
-                SELECT 
-                    store_name as company_name,
-                    COUNT(*) as usage_count,
-                    MAX(date) as last_used
-                FROM entries 
-                WHERE store_name IS NOT NULL AND store_name != ''
-                GROUP BY store_name
-                ORDER BY usage_count DESC, last_used DESC
-            """)
-        
         db.commit()
         cursor.close()
         db.close()
@@ -733,34 +702,6 @@ def backups():
                     
                     db.commit()
                     upload_success = f"Successfully imported {tickets_added} tickets from Excel file."
-                    
-                    # Update company history for imported tickets
-                    if tickets_added > 0:
-                        for row in sheet.iter_rows(min_row=2):
-                            name = None
-                            for col_idx, cell in enumerate(row):
-                                if col_idx < len(headers) and headers[col_idx]:
-                                    header_name = headers[col_idx].strip().lower()
-                                    if header_name in ['store name', 'store_name', 'name']:
-                                        name = cell.value
-                                        break
-                            
-                            if name:
-                                try:
-                                    cursor.execute(
-                                        """
-                                        INSERT INTO company_history (company_name, usage_count, last_used)
-                                        VALUES (%s, 1, NOW())
-                                        ON DUPLICATE KEY UPDATE 
-                                        usage_count = usage_count + 1,
-                                        last_used = NOW()
-                                        """,
-                                        (name,)
-                                    )
-                                except Exception:
-                                    pass
-                        
-                        db.commit()
                 
                 except Exception as e:
                     db.rollback()
@@ -1582,23 +1523,6 @@ def add_ticket():
                 cursor.execute(sql, insert_params)
                 ticket_pk = cursor.lastrowid
                 
-                # Update company history if a company name was provided
-                if name:
-                    try:
-                        cursor.execute(
-                            """
-                            INSERT INTO company_history (company_name, usage_count, last_used)
-                            VALUES (%s, 1, NOW())
-                            ON DUPLICATE KEY UPDATE 
-                            usage_count = usage_count + 1,
-                            last_used = NOW()
-                            """,
-                            (name,)
-                        )
-                    except Exception:
-                        # Ignore errors if company_history table doesn't exist yet
-                        pass
-                
                 db.commit()
                 flash("Ticket added successfully.", "success")
             except Exception as e:
@@ -1839,58 +1763,6 @@ def download_csv_template():
     response = Response(csv_data, mimetype="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=ticket_template.csv"
     return response
-
-
-@app.route("/api/companies/suggest")
-@login_required
-def suggest_companies():
-    """API endpoint to suggest company names based on partial input"""
-    query = request.args.get("q", "").strip()
-    
-    if not query or len(query) < 2:
-        return jsonify([])
-    
-    db = get_db_connection()
-    cursor = db.cursor(dictionary=True)
-    try:
-        # Search for companies that start with the query, ordered by usage count and last used
-        cursor.execute(
-            """
-            SELECT company_name, usage_count, last_used
-            FROM company_history 
-            WHERE company_name LIKE %s
-            ORDER BY usage_count DESC, last_used DESC
-            LIMIT 10
-            """,
-            (f"{query}%",)
-        )
-        companies = cursor.fetchall()
-        
-        # Also search for companies that contain the query (but don't start with it)
-        cursor.execute(
-            """
-            SELECT company_name, usage_count, last_used
-            FROM company_history 
-            WHERE company_name LIKE %s AND company_name NOT LIKE %s
-            ORDER BY usage_count DESC, last_used DESC
-            LIMIT 5
-            """,
-            (f"%{query}%", f"{query}%")
-        )
-        additional_companies = cursor.fetchall()
-        
-        # Combine results, prioritizing exact matches
-        all_companies = companies + additional_companies
-        
-        return jsonify([{
-            "name": company["company_name"],
-            "usage_count": company["usage_count"],
-            "last_used": company["last_used"].isoformat() if company["last_used"] else None
-        } for company in all_companies])
-        
-    finally:
-        cursor.close()
-        db.close()
 
 
 @app.route("/tickets/<int:ticket_id>/edit", methods=["GET", "POST"])
