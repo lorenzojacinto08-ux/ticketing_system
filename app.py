@@ -1473,6 +1473,10 @@ def settings():
 @login_required
 def add_ticket():
     if request.method == "POST":
+        # Debug logging for form submission
+        app.logger.info("POST request received to add_ticket")
+        app.logger.info(f"Form data: {dict(request.form)}")
+        
         # Check if this is a CSV upload
         if request.form.get("csv_upload") == "1":
             return handle_csv_upload()
@@ -1486,6 +1490,8 @@ def add_ticket():
         assigned_to = request.form.get("assigned_to", "").strip()
         job_order = request.form.get("job_order", "").strip()
         status = (request.form.get("status", "pending") or "pending").strip().lower()
+        
+        app.logger.info(f"Processed form data: name='{name}', subject='{subject}', concern='{reported_concern[:50]}...', contact='{contact_number}', email='{email}'")
 
         if status not in {"pending", "ongoing", "completed", "complete", "in progress", "in_progress"}:
             status = "pending"
@@ -1493,12 +1499,14 @@ def add_ticket():
         # Require the core fields that map to your schema
         # Name, subject, and concern are always required; for contact, allow either
         # a phone number or an email address (at least one must be provided).
+        app.logger.info(f"Field validation: name={bool(name)}, subject={bool(subject)}, concern={bool(reported_concern)}, contact_or_email={bool(contact_number or email)}")
+        
         if name and subject and reported_concern and (contact_number or email):
             db = get_db_connection()
             cursor = db.cursor(dictionary=True)
             try:
                 cursor.execute("SHOW COLUMNS FROM entries")
-                cols = {row[0] for row in cursor.fetchall()}
+                cols = {row['Field'] for row in cursor.fetchall()}
 
                 jo_col = "job_order" if "job_order" in cols else ("remedy" if "remedy" in cols else None)
                 if jo_col:
@@ -1508,6 +1516,7 @@ def add_ticket():
                 insert_cols = []
                 insert_sql_values = []
                 insert_params = []
+                sql = ""  # Initialize sql variable for error logging
 
                 def add_param_col(col_name, value):
                     insert_cols.append(col_name)
@@ -1594,12 +1603,17 @@ def add_ticket():
                 flash("Ticket added successfully.", "success")
             except Exception as e:
                 db.rollback()
-                flash("Error creating ticket. Please try again.", "error")
+                app.logger.error(f"Error creating ticket: {str(e)}")
+                app.logger.error(f"Form data: name={name}, subject={subject}, reported_concern={reported_concern}")
+                app.logger.error(f"SQL: {sql}")
+                app.logger.error(f"Params: {insert_params}")
+                flash(f"Error creating ticket: {str(e)}", "error")
             finally:
                 cursor.close()
                 db.close()
             return redirect(url_for("home"))
         else:
+            app.logger.warning(f"Validation failed. Missing required fields. name={bool(name)}, subject={bool(subject)}, concern={bool(reported_concern)}, contact_or_email={bool(contact_number or email)}")
             flash("Please fill in all required fields.", "error")
     
     # GET (or invalid POST): pre-fill the next JO for the form.
@@ -1609,7 +1623,7 @@ def add_ticket():
         cursor = db.cursor(dictionary=True)
         try:
             cursor.execute("SHOW COLUMNS FROM entries")
-            cols = {row[0] for row in cursor.fetchall()}
+            cols = {row['Field'] for row in cursor.fetchall()}
             jo_col = "job_order" if "job_order" in cols else ("remedy" if "remedy" in cols else None)
             if jo_col:
                 next_jo = compute_next_job_order(cursor, jo_col)
