@@ -1,5 +1,0 @@
-store_name,contact_number,email,subject,reported_concern,assigned_to,status
-Jollibee,09123456789,jollibee@example.com,Hardware Issue,POS terminal not working,Jake,pending
-McDonald's,09987654321,mcdonalds@example.com,Software Update,System needs software update,JR,ongoing
-KFC,09112223344,kfc@example.com,Network Problem,Internet connection unstable,JeyV,pending
-Starbucks,09445566778,starbucks@example.com,Printer Issue,Receipt printer not printing,Jake,completed
