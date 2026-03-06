@@ -231,6 +231,10 @@
                         <dd id="ticket-modal-id"></dd>
                     </div>
                     <div>
+                        <dt>Subject</dt>
+                        <dd id="ticket-modal-subject-field"></dd>
+                    </div>
+                    <div>
                         <dt>Status</dt>
                         <dd>
                             <span id="ticket-modal-status" class="ticket-modal-status">
@@ -291,6 +295,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             const overlay = document.getElementById('ticket-modal-overlay');
             const subjectEl = document.getElementById('ticket-modal-subject');
+            const subjectFieldEl = document.getElementById('ticket-modal-subject-field');
             const storeEl = document.getElementById('ticket-modal-store');
             const idEl = document.getElementById('ticket-modal-id');
             const statusBadgeEl = document.getElementById('ticket-modal-status-badge');
@@ -324,6 +329,7 @@
                 const concern = row.dataset.concern || '—';
 
                 subjectEl.textContent = subject;
+                subjectFieldEl.textContent = subject;
                 storeEl.textContent = store ? store : 'No store name';
                 idEl.textContent = id;
                 assigneeEl.textContent = assignee;
