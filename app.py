@@ -31,7 +31,6 @@ if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("DYNO"):
         _log_handler.setFormatter(
             logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
         )
-        print(f"Logging to file: {LOG_FILE_PATH}")
     else:
         # Railway/Heroku style deployment - log to stdout
         import sys
@@ -40,7 +39,6 @@ if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("DYNO"):
         _log_handler.setFormatter(
             logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
         )
-        print("Logging to stdout (no persistent volume available)")
 else:
     # Local development - log to file
     LOG_FILE_PATH = os.path.join(os.path.dirname(__file__), "app.log")
@@ -152,7 +150,6 @@ def run_migrations():
         cursor.execute("SHOW COLUMNS FROM entries LIKE 'job_order'")
         if not cursor.fetchone():
             cursor.execute("ALTER TABLE entries ADD COLUMN job_order VARCHAR(10) DEFAULT NULL AFTER remedy")
-            print("Added job_order column")
         
         # Check if job_order UNIQUE constraint exists
         cursor.execute("""
@@ -163,19 +160,16 @@ def run_migrations():
         """)
         if not cursor.fetchone():
             cursor.execute("ALTER TABLE entries ADD UNIQUE INDEX job_order_UNIQUE (job_order)")
-            print("Added job_order UNIQUE constraint")
         
         # Check if service_done column exists
         cursor.execute("SHOW COLUMNS FROM entries LIKE 'service_done'")
         if not cursor.fetchone():
             cursor.execute("ALTER TABLE entries ADD COLUMN service_done TEXT DEFAULT NULL AFTER job_order")
-            print("Added service_done column")
         
         # Check if labor_fee column exists
         cursor.execute("SHOW COLUMNS FROM entries LIKE 'labor_fee'")
         if not cursor.fetchone():
             cursor.execute("ALTER TABLE entries ADD COLUMN labor_fee DECIMAL(10, 2) DEFAULT NULL AFTER service_done")
-            print("Added labor_fee column")
         
         # Check if company_history table exists
         cursor.execute("SHOW TABLES LIKE 'company_history'")
@@ -194,7 +188,6 @@ def run_migrations():
                   KEY `idx_last_used` (`last_used`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
             """)
-            print("Added company_history table")
             
             # Populate the table with existing company names from the entries table
             cursor.execute("""
@@ -208,7 +201,6 @@ def run_migrations():
                 GROUP BY store_name
                 ORDER BY usage_count DESC, last_used DESC
             """)
-            print("Populated company_history table with existing data")
         
         db.commit()
         cursor.close()
@@ -259,15 +251,12 @@ def compute_next_job_order(cursor, jo_col: str) -> str:
         max_num = row["max_num"] if isinstance(row, dict) else (row[0] if row else None)
         next_num = (int(max_num) if max_num is not None else 0) + 1
         result = f"jo-{next_num:04d}"
-        print(f"DEBUG: Computed next JO: {result} (max was: {max_num})")
         return result
     except Exception as e:
-        print(f"ERROR: Failed to compute next JO: {e}")
         # Fallback to a simple timestamp-based JO if computation fails
         import time
         timestamp = int(time.time()) % 10000
         fallback = f"jo-{timestamp:04d}"
-        print(f"Fallback JO generated: {fallback}")
         return fallback
 
 
@@ -383,9 +372,6 @@ def home():
     entries = cursor.fetchall()
     cursor.close()
     db.close()  # close connection after use
-    
-    # Debug: Print number of entries found
-    print(f"DEBUG: Found {len(entries)} entries for home page")
     
     response = render_template(
         "index.html",
@@ -1504,12 +1490,6 @@ def add_ticket():
         if status not in {"pending", "ongoing", "completed", "complete", "in progress", "in_progress"}:
             status = "pending"
 
-        # Debug: Print form data and environment
-        print(f"DEBUG: Form data received - name: {name}, subject: {subject}, concern: {reported_concern}")
-        print(f"DEBUG: Environment - RAILWAY_ENVIRONMENT: {os.getenv('RAILWAY_ENVIRONMENT')}")
-        print(f"DEBUG: Database URL present: {'Yes' if os.getenv('DATABASE_URL') else 'No'}")
-        print(f"DEBUG: DB_HOST: {os.getenv('DB_HOST')}, DB_NAME: {os.getenv('DB_NAME')}")
-
         # Require the core fields that map to your schema
         # Name, subject, and concern are always required; for contact, allow either
         # a phone number or an email address (at least one must be provided).
@@ -1517,18 +1497,13 @@ def add_ticket():
             db = get_db_connection()
             cursor = db.cursor(dictionary=True)
             try:
-                print("DEBUG: Database connection established")
                 cursor.execute("SHOW COLUMNS FROM entries")
                 cols = {row[0] for row in cursor.fetchall()}
-                print(f"DEBUG: Available columns: {cols}")
 
                 jo_col = "job_order" if "job_order" in cols else ("remedy" if "remedy" in cols else None)
                 if jo_col:
                     # Always auto-generate JO per new ticket (can still be edited later).
                     job_order = compute_next_job_order(cursor, jo_col)
-                    print(f"DEBUG: Generated JO: {job_order}")
-                else:
-                    print("DEBUG: No JO column found")
 
                 insert_cols = []
                 insert_sql_values = []
@@ -1563,12 +1538,8 @@ def add_ticket():
                     (c for c in ("reported_concern", "reportedConcern", "concern", "details", "description") if c in cols),
                     None,
                 )
-                print(f"DEBUG: Concern column resolved to: {concern_col}")
                 if concern_col:
                     add_param_col(concern_col, reported_concern)
-                    print(f"DEBUG: Added concern to {concern_col}: {reported_concern}")
-                else:
-                    print("DEBUG: WARNING - No concern column found!")
 
                 if "assigned_it" in cols:
                     # Keep legacy schema working: if there's no separate concern column,
@@ -1599,13 +1570,8 @@ def add_ticket():
                     raise RuntimeError("No matching columns found for insert into entries.")
 
                 sql = f"INSERT INTO entries ({', '.join(insert_cols)}) VALUES ({', '.join(insert_sql_values)})"
-                print(f"DEBUG: SQL: {sql}")
-                print(f"DEBUG: Params: {insert_params}")
-                print(f"DEBUG: Insert columns: {insert_cols}")
-                
                 cursor.execute(sql, insert_params)
                 ticket_pk = cursor.lastrowid
-                print(f"DEBUG: Ticket created with PK: {ticket_pk}")
                 
                 # Update company history if a company name was provided
                 if name:
@@ -1620,17 +1586,13 @@ def add_ticket():
                             """,
                             (name,)
                         )
-                        print("DEBUG: Company history updated")
-                    except Exception as e:
-                        print(f"DEBUG: Company history error: {e}")
+                    except Exception:
                         # Ignore errors if company_history table doesn't exist yet
                         pass
                 
                 db.commit()
-                print("DEBUG: Database committed successfully")
                 flash("Ticket added successfully.", "success")
             except Exception as e:
-                print(f"DEBUG: Error creating ticket: {e}")
                 db.rollback()
                 flash("Error creating ticket. Please try again.", "error")
             finally:
@@ -1651,12 +1613,11 @@ def add_ticket():
             jo_col = "job_order" if "job_order" in cols else ("remedy" if "remedy" in cols else None)
             if jo_col:
                 next_jo = compute_next_job_order(cursor, jo_col)
-                print(f"DEBUG: Next JO for form: {next_jo}")
         finally:
             cursor.close()
             db.close()
-    except Exception as e:
-        print(f"DEBUG: Error getting next JO: {e}")
+    except Exception:
+        pass
     
     return render_template("add_ticket.html", next_jo=next_jo)
 
