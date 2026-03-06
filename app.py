@@ -222,8 +222,8 @@ def get_entries_pk_column(db):
 
 def compute_next_job_order(cursor, jo_col: str) -> str:
     """
-    Compute the next JO in the format `jo-0001` based on the max existing value
-    in the given column (`job_order` or legacy `remedy`).
+    Compute next JO in the format `jo-0001` based on max existing value
+    in given column (`job_order` or legacy `remedy`).
     """
     if jo_col not in {"job_order", "remedy"}:
         raise ValueError("Unsupported JO column")
@@ -231,10 +231,10 @@ def compute_next_job_order(cursor, jo_col: str) -> str:
     cursor.execute(
         f"""
         SELECT
-            MAX(CAST(SUBSTRING(LOWER(TRIM({jo_col})), 4) AS UNSIGNED)) AS max_num
+            MAX(CAST(SUBSTRING({jo_col}, 5) AS UNSIGNED)) AS max_num
         FROM entries
         WHERE {jo_col} IS NOT NULL
-          AND LOWER(TRIM({jo_col})) REGEXP '^jo-[0-9]+$'
+          AND {jo_col} REGEXP '^jo-[0-9]+$'
         """
     )
     row = cursor.fetchone()
