@@ -12,10 +12,6 @@
         {% endif %}
                 <a href="{{ url_for('add_ticket') }}" class="{% if active_page == 'add_ticket' %}active{% endif %}">Add Ticket +</a>
     </div>
-    <div class="sidebar-section">
-        <h3>Documents</h3>
-        <a href="{{ url_for('quotations') }}" class="{% if active_page == 'quotations' %}active{% endif %}">Quotations</a>
-    </div>
     <div class="sidebar-section sidebar-section-bottom">
         <h3>Status</h3>
         <a href="{{ url_for('home') }}" class="sidebar-status status-complete">

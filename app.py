@@ -2068,12 +2068,6 @@ def placeholder3():
     return render_template("placeholder3.html", active_page="placeholder3")
 
 
-@app.route("/quotations")
-@login_required
-def quotations():
-    return render_template("quotations.html", active_page="quotations")
-
-
 @app.context_processor
 def ticket_counts():
     """Provide ticket status counts for sidebar on all pages."""
