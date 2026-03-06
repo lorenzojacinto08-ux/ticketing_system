@@ -36,7 +36,7 @@ def get_db_connection():
             port=int(os.getenv("DB_PORT", "3306"))
         )
 
-def reset_ticket_counter():
+def reset_ticket_counter(target_value=1):
     """Reset the auto-increment counter for entries table"""
     try:
         db = get_db_connection()
@@ -70,8 +70,8 @@ def reset_ticket_counter():
         print(f"📊 Current highest {auto_increment_col}: {max_id}")
         
         # Confirm before proceeding
-        confirm = input(f"\n⚠️  This will reset the auto-increment counter to 1.\n"
-                        f"   New tickets will start from number 1.\n"
+        confirm = input(f"\n⚠️  This will reset the auto-increment counter to {target_value}.\n"
+                        f"   New tickets will start from number {target_value}.\n"
                         f"   Are you sure you want to continue? (yes/no): ")
         
         if confirm.lower() != 'yes':
@@ -79,11 +79,11 @@ def reset_ticket_counter():
             return False
         
         # Reset the auto-increment counter
-        cursor.execute(f"ALTER TABLE entries AUTO_INCREMENT = 1")
+        cursor.execute(f"ALTER TABLE entries AUTO_INCREMENT = {target_value}")
         db.commit()
         
-        print(f"✅ Successfully reset {auto_increment_col} counter to 1")
-        print("🎫 New tickets will start from number 1")
+        print(f"✅ Successfully reset {auto_increment_col} counter to {target_value}")
+        print(f"🎫 New tickets will start from number {target_value}")
         
         return True
         
@@ -100,6 +100,23 @@ def reset_ticket_counter():
             db.close()
 
 if __name__ == "__main__":
+    import sys
+    
     print("🔄 Ticket Counter Reset Tool")
     print("=" * 40)
-    reset_ticket_counter()
+    
+    # Get target value from command line or default to 1
+    target_value = 1
+    if len(sys.argv) > 1:
+        try:
+            target_value = int(sys.argv[1])
+            if target_value < 0:
+                print("❌ Error: Target value must be 0 or positive")
+                sys.exit(1)
+        except ValueError:
+            print("❌ Error: Please provide a valid number")
+            print("Usage: python3 reset_ticket_counter.py [number]")
+            print("Example: python3 reset_ticket_counter.py 0")
+            sys.exit(1)
+    
+    reset_ticket_counter(target_value)
