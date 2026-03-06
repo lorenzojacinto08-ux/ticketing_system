@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, Response, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, Response, session, flash, jsonify, make_response
 import mysql.connector
 from datetime import datetime
 import csv
@@ -342,11 +342,11 @@ def home():
     cursor.close()
     db.close()  # close connection after use
     
-    response = render_template(
+    response = make_response(render_template(
         "index.html",
         entries=entries,
         active_page="home",
-    )
+    ))
     
     # Add headers to response
     for header, value in response_headers.items():
@@ -1678,23 +1678,6 @@ def handle_csv_upload():
                     # Insert ticket
                     sql = f"INSERT INTO entries ({', '.join(insert_cols)}) VALUES ({', '.join(insert_sql_values)})"
                     cursor.execute(sql, insert_params)
-                    
-                    # Update company history
-                    if store_name:
-                        try:
-                            cursor.execute(
-                                """
-                                INSERT INTO company_history (company_name, usage_count, last_used)
-                                VALUES (%s, 1, NOW())
-                                ON DUPLICATE KEY UPDATE 
-                                usage_count = usage_count + 1,
-                                last_used = NOW()
-                                """,
-                                (store_name,)
-                            )
-                        except Exception:
-                            pass
-                    
                     tickets_created += 1
                     
                 except Exception as e:
