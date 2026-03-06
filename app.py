@@ -148,6 +148,23 @@ def run_migrations():
         db = get_db_connection()
         cursor = db.cursor()
         
+        # Check if job_order column exists (critical for JO generation)
+        cursor.execute("SHOW COLUMNS FROM entries LIKE 'job_order'")
+        if not cursor.fetchone():
+            cursor.execute("ALTER TABLE entries ADD COLUMN job_order VARCHAR(10) DEFAULT NULL AFTER remedy")
+            print("Added job_order column")
+        
+        # Check if job_order UNIQUE constraint exists
+        cursor.execute("""
+            SELECT INDEX_NAME FROM information_schema.STATISTICS 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'entries' 
+            AND INDEX_NAME = 'job_order_UNIQUE'
+        """)
+        if not cursor.fetchone():
+            cursor.execute("ALTER TABLE entries ADD UNIQUE INDEX job_order_UNIQUE (job_order)")
+            print("Added job_order UNIQUE constraint")
+        
         # Check if service_done column exists
         cursor.execute("SHOW COLUMNS FROM entries LIKE 'service_done'")
         if not cursor.fetchone():
@@ -228,19 +245,82 @@ def compute_next_job_order(cursor, jo_col: str) -> str:
     if jo_col not in {"job_order", "remedy"}:
         raise ValueError("Unsupported JO column")
 
-    cursor.execute(
-        f"""
-        SELECT
-            MAX(CAST(SUBSTRING({jo_col}, 5) AS UNSIGNED)) AS max_num
-        FROM entries
-        WHERE {jo_col} IS NOT NULL
-          AND {jo_col} REGEXP '^jo-[0-9]+$'
-        """
-    )
-    row = cursor.fetchone()
-    max_num = row["max_num"] if isinstance(row, dict) else (row[0] if row else None)
-    next_num = (int(max_num) if max_num is not None else 0) + 1
-    return f"jo-{next_num:04d}"
+    try:
+        cursor.execute(
+            f"""
+            SELECT
+                MAX(CAST(SUBSTRING({jo_col}, 5) AS UNSIGNED)) AS max_num
+            FROM entries
+            WHERE {jo_col} IS NOT NULL
+              AND {jo_col} REGEXP '^jo-[0-9]+$'
+            """
+        )
+        row = cursor.fetchone()
+        max_num = row["max_num"] if isinstance(row, dict) else (row[0] if row else None)
+        next_num = (int(max_num) if max_num is not None else 0) + 1
+        result = f"jo-{next_num:04d}"
+        print(f"DEBUG: Computed next JO: {result} (max was: {max_num})")
+        return result
+    except Exception as e:
+        print(f"ERROR: Failed to compute next JO: {e}")
+        # Fallback to a simple timestamp-based JO if computation fails
+        import time
+        timestamp = int(time.time()) % 10000
+        fallback = f"jo-{timestamp:04d}"
+        print(f"Fallback JO generated: {fallback}")
+        return fallback
+
+
+@app.route("/debug/jo-generation")
+@login_required
+def debug_jo_generation():
+    """Debug endpoint to check JO generation functionality"""
+    try:
+        db = get_db_connection()
+        cursor = db.cursor(dictionary=True)
+        
+        # Check database schema
+        cursor.execute("SHOW COLUMNS FROM entries")
+        all_columns = [row['Field'] for row in cursor.fetchall()]
+        
+        # Check job_order column specifically
+        job_order_exists = 'job_order' in all_columns
+        
+        # Check existing JO numbers
+        cursor.execute("SELECT job_order FROM entries WHERE job_order IS NOT NULL ORDER BY job_order DESC LIMIT 10")
+        existing_jos = [row['job_order'] for row in cursor.fetchall()]
+        
+        # Test JO generation
+        jo_col = "job_order" if job_order_exists else ("remedy" if "remedy" in all_columns else None)
+        test_jo = None
+        error_msg = None
+        
+        if jo_col:
+            try:
+                test_jo = compute_next_job_order(cursor, jo_col)
+            except Exception as e:
+                error_msg = str(e)
+        else:
+            error_msg = "No JO column found"
+        
+        cursor.close()
+        db.close()
+        
+        return jsonify({
+            "status": "success",
+            "database_columns": all_columns,
+            "job_order_exists": job_order_exists,
+            "jo_column": jo_col,
+            "existing_jos": existing_jos,
+            "next_jo": test_jo,
+            "error": error_msg
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 
 @app.route("/health")
@@ -1400,6 +1480,9 @@ def add_ticket():
         if status not in {"pending", "ongoing", "completed", "complete", "in progress", "in_progress"}:
             status = "pending"
 
+        # Debug: Print form data
+        print(f"DEBUG: Form data received - name: {name}, subject: {subject}, concern: {reported_concern}")
+
         # Require the core fields that map to your schema
         # Name, subject, and concern are always required; for contact, allow either
         # a phone number or an email address (at least one must be provided).
@@ -1409,11 +1492,13 @@ def add_ticket():
             try:
                 cursor.execute("SHOW COLUMNS FROM entries")
                 cols = {row[0] for row in cursor.fetchall()}
+                print(f"DEBUG: Available columns: {cols}")
 
                 jo_col = "job_order" if "job_order" in cols else ("remedy" if "remedy" in cols else None)
                 if jo_col:
                     # Always auto-generate JO per new ticket (can still be edited later).
                     job_order = compute_next_job_order(cursor, jo_col)
+                    print(f"DEBUG: Generated JO: {job_order}")
 
                 insert_cols = []
                 insert_sql_values = []
@@ -1480,8 +1565,12 @@ def add_ticket():
                     raise RuntimeError("No matching columns found for insert into entries.")
 
                 sql = f"INSERT INTO entries ({', '.join(insert_cols)}) VALUES ({', '.join(insert_sql_values)})"
+                print(f"DEBUG: SQL: {sql}")
+                print(f"DEBUG: Params: {insert_params}")
+                
                 cursor.execute(sql, insert_params)
                 ticket_pk = cursor.lastrowid
+                print(f"DEBUG: Ticket created with PK: {ticket_pk}")
                 
                 # Update company history if a company name was provided
                 if name:
@@ -1496,16 +1585,25 @@ def add_ticket():
                             """,
                             (name,)
                         )
-                    except Exception:
+                    except Exception as e:
+                        print(f"DEBUG: Company history error: {e}")
                         # Ignore errors if company_history table doesn't exist yet
                         pass
                 
                 db.commit()
+                print("DEBUG: Database committed successfully")
                 flash("Ticket added successfully.", "success")
+            except Exception as e:
+                print(f"DEBUG: Error creating ticket: {e}")
+                db.rollback()
+                flash("Error creating ticket. Please try again.", "error")
             finally:
                 cursor.close()
                 db.close()
             return redirect(url_for("home", _anchor="tickets"))
+        else:
+            flash("Please fill in all required fields.", "error")
+    
     # GET (or invalid POST): pre-fill the next JO for the form.
     next_jo = None
     try:
@@ -1517,13 +1615,14 @@ def add_ticket():
             jo_col = "job_order" if "job_order" in cols else ("remedy" if "remedy" in cols else None)
             if jo_col:
                 next_jo = compute_next_job_order(cursor, jo_col)
+                print(f"DEBUG: Next JO for form: {next_jo}")
         finally:
             cursor.close()
             db.close()
-    except Exception:
-        next_jo = None
-
-    return render_template("add_ticket.html", active_page="add_ticket", next_jo=next_jo)
+    except Exception as e:
+        print(f"DEBUG: Error getting next JO: {e}")
+    
+    return render_template("add_ticket.html", next_jo=next_jo)
 
 
 def handle_csv_upload():
@@ -2265,7 +2364,7 @@ if __name__ == "__main__":
     debug_mode = os.environ.get("FLASK_ENV") == "development"
     
     app.run(
-        host="0.0.0.0",  # Accept connections from any IP
-        port=port,       # Use Railway's PORT or default to 5000
-        debug=debug_mode # Only use debug in development
+        host="192.168.1.19",  # Use specific IP address
+        port=port,           # Use Railway's PORT or default to 5000
+        debug=debug_mode     # Only use debug in development
     )
