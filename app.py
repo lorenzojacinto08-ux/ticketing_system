@@ -335,52 +335,75 @@ def backups():
     filter_error = None
     cols = set()
 
-    # When a specific date is chosen, filter tickets for that day
+    # Build query with filters (date is now optional)
+    query = "SELECT * FROM entries WHERE 1=1"
+    params = []
+    
+    # Add date filter if provided
     if selected_date_str:
         try:
             # Validate date from the date picker
             selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
-
-            db = get_db_connection()
-            cursor = db.cursor(dictionary=True)
-            try:
-                # Work with either `date` or `created_at` column, if present
-                cursor.execute("SHOW COLUMNS FROM entries")
-                field_rows = cursor.fetchall()
-                cols = {row["Field"] for row in field_rows}
-
-                date_col = None
-                if "date" in cols:
-                    date_col = "date"
-                elif "created_at" in cols:
-                    date_col = "created_at"
-
-                if not date_col:
-                    filter_error = "No date column found on the entries table."
-                else:
-                    # Build query with filters
-                    query = f"SELECT * FROM entries WHERE DATE({date_col}) = %s"
-                    params = [selected_date_str]
-                    
-                    # Add status filter
-                    if status_filter:
-                        query += " AND status = %s"
-                        params.append(status_filter)
-                    
-                    # Add store name filter
-                    if store_filter:
-                        query += " AND store_name LIKE %s"
-                        params.append(f"%{store_filter}%")
-                    
-                    query += f" ORDER BY {date_col} DESC"
-                    
-                    cursor.execute(query, params)
-                    entries = cursor.fetchall()
-            finally:
-                cursor.close()
-                db.close()
         except ValueError:
             filter_error = "Invalid date format. Please use the date picker."
+    
+    # Get database connection for filtering
+    if not filter_error:
+        db = get_db_connection()
+        cursor = db.cursor(dictionary=True)
+        try:
+            # Work with either `date` or `created_at` column, if present
+            cursor.execute("SHOW COLUMNS FROM entries")
+            field_rows = cursor.fetchall()
+            cols = {row["Field"] for row in field_rows}
+
+            date_col = None
+            if "date" in cols:
+                date_col = "date"
+            elif "created_at" in cols:
+                date_col = "created_at"
+
+            # Add date filter if provided and valid
+            if selected_date_str and not filter_error and date_col:
+                query += f" AND DATE({date_col}) = %s"
+                params.append(selected_date_str)
+        except Exception as e:
+            filter_error = f"Database error: {str(e)}"
+        finally:
+            cursor.close()
+            db.close()
+    
+    # Only proceed if no filter error
+    if not filter_error:
+        # Get fresh connection for the main query
+        db = get_db_connection()
+        cursor = db.cursor(dictionary=True)
+        try:
+            # Add status filter
+            if status_filter:
+                query += " AND status = %s"
+                params.append(status_filter)
+            
+            # Add store name filter
+            if store_filter:
+                query += " AND store_name LIKE %s"
+                params.append(f"%{store_filter}%")
+            
+            # Add ordering
+            if selected_date_str and date_col:
+                query += f" ORDER BY {date_col} DESC"
+            elif "date" in cols:
+                query += " ORDER BY date DESC"
+            else:
+                query += " ORDER BY ticket_no DESC"
+            
+            cursor.execute(query, params)
+            entries = cursor.fetchall()
+        except Exception as e:
+            filter_error = f"Database error: {str(e)}"
+        finally:
+            cursor.close()
+            db.close()
 
     # If user requested a CSV download for all tickets (no date filter)
     if export_all and download and not filter_error:
@@ -477,8 +500,8 @@ def backups():
         response.headers["Content-Disposition"] = f"attachment; filename={filename}"
         return response
 
-    # If user requested a CSV download for a specific date and we have a valid date, return CSV instead of HTML
-    if selected_date_str and download and not filter_error:
+    # If user requested a CSV download and we have filters (with or without date), return CSV instead of HTML
+    if download and not filter_error and (selected_date_str or status_filter or store_filter):
         output = io.StringIO()
         
         # Define a more user-friendly column order
@@ -555,11 +578,15 @@ def backups():
         output.close()
 
         # Generate filename with filters
-        filename_parts = ["tickets", selected_date_str]
+        filename_parts = ["tickets"]
+        if selected_date_str:
+            filename_parts.append(selected_date_str)
         if status_filter:
             filename_parts.append(f"status-{status_filter}")
         if store_filter:
             filename_parts.append(f"store-{store_filter.lower().replace(' ', '-')}")
+        if not selected_date_str and not status_filter and not store_filter:
+            filename_parts.append("all")
         filename = "-".join(filename_parts) + ".csv"
         response = Response(csv_data, mimetype="text/csv")
         response.headers["Content-Disposition"] = f"attachment; filename={filename}"

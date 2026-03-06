@@ -55,7 +55,6 @@
                                             name="date"
                                             class="form-control"
                                             value="{{ selected_date or '' }}"
-                                            required
                                         >
                                     </div>
                                     <div class="col-md-3">
@@ -84,9 +83,9 @@
                                             Filter
                                         </button>
 
-                                        {% if selected_date %}
+                                        {% if selected_date or status_filter or store_filter %}
                                             <a
-                                                href="{{ url_for('backups', date=selected_date, status=status_filter or '', store=store_filter or '', download=1) }}"
+                                                href="{{ url_for('backups', date=selected_date or '', status=status_filter or '', store=store_filter or '', download=1) }}"
                                                 class="btn btn-outline-secondary mt-2 {% if not entries %}disabled{% endif %}"
                                                 {% if not entries %}aria-disabled="true"{% endif %}
                                             >
@@ -138,10 +137,16 @@
                             </section>
                         </div>
 
-                        {% if selected_date %}
+                        {% if selected_date or status_filter or store_filter %}
                             <div class="mt-4">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h2 class="h5 mb-0">Results for {{ selected_date }}</h2>
+                                    <h2 class="h5 mb-0">
+                                        {% if selected_date %}
+                                            Results for {{ selected_date }}
+                                        {% else %}
+                                            Filtered Results
+                                        {% endif %}
+                                    </h2>
                                     {% if status_filter or store_filter %}
                                         <div class="d-flex gap-2">
                                             {% if status_filter %}
@@ -162,7 +167,7 @@
 
                                 {% if entries %}
                                     <p class="text-muted mb-3">
-                                        {{ entries|length }} ticket(s) found for this day{% if status_filter or store_filter %} with applied filters{% endif %}.
+                                        {{ entries|length }} ticket(s) found{% if selected_date %} for this day{% endif %}{% if status_filter or store_filter %} with applied filters{% endif %}.
                                     </p>
                                     <div class="table-wrapper">
                                         <table class="data-table">
@@ -246,13 +251,17 @@
                                     </div>
                                 {% else %}
                                     <p class="text-muted mt-3">
-                                        No tickets found for this day.
+                                        {% if selected_date %}
+                                            No tickets found for this day.
+                                        {% else %}
+                                            No tickets found matching the applied filters.
+                                        {% endif %}
                                     </p>
                                 {% endif %}
                             </div>
                         {% else %}
                             <p class="text-muted mt-3">
-                                Choose a date to see all tickets for that day and enable CSV download, or use the full backup above.
+                                Choose a date or apply filters to see matching tickets and enable CSV download, or use the full backup above.
                             </p>
                         {% endif %}
                     </div>
