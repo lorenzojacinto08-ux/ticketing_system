@@ -9,6 +9,9 @@ from logging.handlers import RotatingFileHandler
 from functools import wraps
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.utils import get_column_letter
 
 # Load environment variables from .env file if it exists
 load_dotenv()
@@ -322,7 +325,121 @@ def contact():
     return render_template("contact.html")
 
 
-@app.route("/backups")
+def create_excel_file(entries, fieldnames=None):
+    """Create an Excel file from ticket entries with proper formatting"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Tickets"
+    
+    # Define column order and headers
+    preferred_order = [
+        'ticket_no', 'job_order', 'store_name', 'contact_number', 'email', 
+        'subject', 'concern', 'reported_concern', 'service_done', 
+        'labor_fee', 'assigned_it', 'assigned_to', 'status', 'date', 'date_completed', 'created_at', 'remedy'
+    ]
+    
+    # Determine fieldnames and column order
+    if entries:
+        all_columns = list(entries[0].keys())
+        if fieldnames is None:
+            fieldnames = [col for col in preferred_order if col in all_columns]
+            fieldnames += [col for col in all_columns if col not in preferred_order]
+    
+    # Header mapping for better column names
+    header_mapping = {
+        'ticket_no': 'Ticket No',
+        'job_order': 'Job Order',
+        'store_name': 'Store Name',
+        'contact_number': 'Contact Number',
+        'email': 'Email',
+        'subject': 'Subject',
+        'concern': 'Concern',
+        'reported_concern': 'Reported Concern',
+        'service_done': 'Service Done',
+        'labor_fee': 'Labor Fee',
+        'assigned_it': 'Assigned IT',
+        'assigned_to': 'Assigned To',
+        'status': 'Status',
+        'date': 'Date',
+        'date_completed': 'Date Completed',
+        'created_at': 'Created At',
+        'remedy': 'Remedy'
+    }
+    
+    # Create header row with styling
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+    
+    for col_idx, field in enumerate(fieldnames, 1):
+        header_text = header_mapping.get(field, field.replace('_', ' ').title())
+        cell = ws.cell(row=1, column=col_idx, value=header_text)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+    
+    # Add data rows with formatting
+    for row_idx, entry in enumerate(entries, 2):
+        for col_idx, field in enumerate(fieldnames, 1):
+            value = entry.get(field, '')
+            
+            # Format the value for better readability
+            if value is None:
+                formatted_value = ''
+            elif field in ['date', 'date_completed', 'created_at'] and value:
+                # Format datetime fields
+                if isinstance(value, datetime):
+                    formatted_value = value.strftime('%Y-%m-%d %H:%M:%S')
+                else:
+                    formatted_value = str(value)
+            elif field == 'labor_fee' and value:
+                # Format currency
+                try:
+                    formatted_value = float(value)
+                    # Set as number for Excel calculations
+                    cell = ws.cell(row=row_idx, column=col_idx, value=formatted_value)
+                    continue  # Skip the default cell setting below
+                except (ValueError, TypeError):
+                    formatted_value = str(value)
+            else:
+                formatted_value = str(value)
+            
+            ws.cell(row=row_idx, column=col_idx, value=formatted_value)
+    
+    # Auto-adjust column widths
+    for col_idx in range(1, len(fieldnames) + 1):
+        col_letter = get_column_letter(col_idx)
+        max_length = 0
+        
+        # Check header length
+        header_cell = ws.cell(row=1, column=col_idx)
+        header_length = len(str(header_cell.value))
+        max_length = max(max_length, header_length)
+        
+        # Check data length
+        for row_idx in range(2, len(entries) + 2):
+            cell = ws.cell(row=row_idx, column=col_idx)
+            try:
+                cell_length = len(str(cell.value))
+                if cell_length > max_length:
+                    max_length = cell_length
+            except:
+                pass
+        
+        # Set column width (with some padding)
+        adjusted_width = min(max_length + 2, 50)  # Cap at 50 for very long fields
+        ws.column_dimensions[col_letter].width = adjusted_width
+    
+    # Save to bytes buffer
+    from io import BytesIO
+    excel_buffer = BytesIO()
+    wb.save(excel_buffer)
+    excel_buffer.seek(0)
+    
+    return excel_buffer.getvalue()
+
+
+@app.route("/backups", methods=["GET", "POST"])
 @login_required
 def backups():
     selected_date_str = request.args.get("date", "")
@@ -330,7 +447,273 @@ def backups():
     export_all = request.args.get("all") == "1"
     status_filter = request.args.get("status", "").strip()
     store_filter = request.args.get("store", "").strip()
-
+    format_type = request.args.get("format", "csv").lower()  # Default to CSV, support excel
+    template = request.args.get("template") == "1"  # Template download flag
+    
+    # Handle Excel upload
+    upload_error = None
+    upload_success = None
+    
+    if request.method == "POST" and 'excel_file' in request.files:
+        file = request.files['excel_file']
+        if file and file.filename and file.filename.endswith(('.xlsx', '.xls')):
+            try:
+                from openpyxl import load_workbook
+                import io
+                
+                # Read the Excel file
+                excel_data = file.read()
+                workbook = load_workbook(io.BytesIO(excel_data))
+                sheet = workbook.active
+                
+                # Get headers from first row
+                headers = []
+                for cell in sheet[1]:
+                    headers.append(cell.value)
+                
+                # Process data rows
+                tickets_added = 0
+                db = get_db_connection()
+                cursor = db.cursor(dictionary=True)
+                
+                try:
+                    cursor.execute("SHOW COLUMNS FROM entries")
+                    cols = {row[0] for row in cursor.fetchall()}
+                    
+                    jo_col = "job_order" if "job_order" in cols else ("remedy" if "remedy" in cols else None)
+                    
+                    for row_idx, row in enumerate(sheet.iter_rows(min_row=2), start=2):
+                        if not any(cell.value for cell in row):
+                            continue  # Skip empty rows
+                        
+                        # Map Excel columns to database fields
+                        ticket_data = {}
+                        for col_idx, cell_value in enumerate(row):
+                            if col_idx < len(headers) and headers[col_idx]:
+                                header_name = headers[col_idx].strip().lower()
+                                # Map common header names to database field names
+                                field_mapping = {
+                                    'store name': 'store_name',
+                                    'store_name': 'store_name',
+                                    'contact number': 'contact_number',
+                                    'contact_number': 'contact_number',
+                                    'email': 'email',
+                                    'subject': 'subject',
+                                    'concern': 'reported_concern',
+                                    'reported concern': 'reported_concern',
+                                    'reported_concern': 'reported_concern',
+                                    'status': 'status',
+                                    'assigned to': 'assigned_to',
+                                    'assigned_to': 'assigned_to',
+                                    'assigned it': 'assigned_it',
+                                    'assigned_it': 'assigned_it',
+                                    'service done': 'service_done',
+                                    'service_done': 'service_done',
+                                    'labor fee': 'labor_fee',
+                                    'labor_fee': 'labor_fee',
+                                    'date': 'date',
+                                    'date completed': 'date_completed',
+                                    'date_completed': 'date_completed'
+                                }
+                                
+                                field_name = field_mapping.get(header_name, header_name.replace(' ', '_'))
+                                ticket_data[field_name] = cell_value
+                        
+                        # Validate required fields
+                        name = ticket_data.get('store_name') or ticket_data.get('Name')
+                        subject = ticket_data.get('subject') or ticket_data.get('Subject')
+                        concern = ticket_data.get('reported_concern') or ticket_data.get('concern')
+                        contact = ticket_data.get('contact_number') or ticket_data.get('contact_number')
+                        email = ticket_data.get('email')
+                        
+                        if name and subject and concern and (contact or email):
+                            # Generate job order if needed
+                            job_order = None
+                            if jo_col:
+                                job_order = compute_next_job_order(cursor, jo_col)
+                            
+                            # Prepare insert columns
+                            insert_cols = []
+                            insert_sql_values = []
+                            insert_params = []
+                            
+                            def add_param_col(col_name, value):
+                                insert_cols.append(col_name)
+                                insert_sql_values.append("%s")
+                                insert_params.append(value)
+                            
+                            def add_sql_col(col_name, sql_expr):
+                                insert_cols.append(col_name)
+                                insert_sql_values.append(sql_expr)
+                            
+                            # Add fields
+                            if "store_name" in cols and name:
+                                add_param_col("store_name", name)
+                            if "contact_number" in cols and contact:
+                                add_param_col("contact_number", contact)
+                            if "email" in cols and email:
+                                add_param_col("email", email)
+                            if "subject" in cols and subject:
+                                add_param_col("subject", subject)
+                            if jo_col and job_order:
+                                add_param_col(jo_col, job_order)
+                            
+                            concern_col = next(
+                                (c for c in ("reported_concern", "reportedConcern", "concern", "details", "description") if c in cols),
+                                None,
+                            )
+                            if concern_col and concern:
+                                add_param_col(concern_col, concern)
+                            
+                            # Handle assigned_to/assigned_it
+                            assigned_to = ticket_data.get('assigned_to')
+                            if "assigned_it" in cols:
+                                if not concern_col:
+                                    lines = []
+                                    if email:
+                                        lines.append(f"Email: {email}")
+                                    if contact:
+                                        lines.append(f"Contact: {contact}")
+                                    lines.append(f"Reported concern: {concern}")
+                                    if assigned_to:
+                                        lines.append(f"Assigned to: {assigned_to}")
+                                    add_param_col("assigned_it", "\n".join(lines))
+                                else:
+                                    add_param_col("assigned_it", assigned_to)
+                            
+                            # Handle status
+                            status = ticket_data.get('status', 'pending')
+                            if "status" in cols and status:
+                                normalized_status = "completed" if str(status).lower() in {"complete", "completed"} else str(status).lower()
+                                add_param_col("status", normalized_status)
+                            
+                            # Handle other fields
+                            if "service_done" in cols and ticket_data.get('service_done'):
+                                add_param_col("service_done", ticket_data['service_done'])
+                            if "labor_fee" in cols and ticket_data.get('labor_fee'):
+                                try:
+                                    labor_fee = float(ticket_data['labor_fee'])
+                                    add_param_col("labor_fee", labor_fee)
+                                except (ValueError, TypeError):
+                                    pass
+                            
+                            # Add date
+                            if "date" in cols:
+                                add_sql_col("date", "NOW()")
+                            elif "created_at" in cols:
+                                add_sql_col("created_at", "NOW()")
+                            
+                            if insert_cols:
+                                sql = f"INSERT INTO entries ({', '.join(insert_cols)}) VALUES ({', '.join(insert_sql_values)})"
+                                cursor.execute(sql, insert_params)
+                                tickets_added += 1
+                    
+                    db.commit()
+                    upload_success = f"Successfully imported {tickets_added} tickets from Excel file."
+                    
+                    # Update company history for imported tickets
+                    if tickets_added > 0:
+                        for row in sheet.iter_rows(min_row=2):
+                            name = None
+                            for col_idx, cell in enumerate(row):
+                                if col_idx < len(headers) and headers[col_idx]:
+                                    header_name = headers[col_idx].strip().lower()
+                                    if header_name in ['store name', 'store_name', 'name']:
+                                        name = cell.value
+                                        break
+                            
+                            if name:
+                                try:
+                                    cursor.execute(
+                                        """
+                                        INSERT INTO company_history (company_name, usage_count, last_used)
+                                        VALUES (%s, 1, NOW())
+                                        ON DUPLICATE KEY UPDATE 
+                                        usage_count = usage_count + 1,
+                                        last_used = NOW()
+                                        """,
+                                        (name,)
+                                    )
+                                except Exception:
+                                    pass
+                        
+                        db.commit()
+                
+                except Exception as e:
+                    db.rollback()
+                    upload_error = f"Error processing Excel file: {str(e)}"
+                finally:
+                    cursor.close()
+                    db.close()
+                    
+            except Exception as e:
+                upload_error = f"Error reading Excel file: {str(e)}"
+        else:
+            upload_error = "Please upload a valid Excel file (.xlsx or .xls)"
+    
+    # Handle template download
+    if template and download:
+        # Create a template Excel file with proper headers
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Ticket Template"
+        
+        # Add headers with styling
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center")
+        
+        headers = [
+            "Store Name",
+            "Contact Number", 
+            "Email",
+            "Subject",
+            "Reported Concern",
+            "Assigned To",
+            "Status",
+            "Service Done",
+            "Labor Fee"
+        ]
+        
+        for col_idx, header_text in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_idx, value=header_text)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+        
+        # Add sample data row
+        sample_data = [
+            "Sample Store",
+            "123-456-7890",
+            "store@example.com",
+            "Network Issue",
+            "Store cannot connect to internet",
+            "IT Support Staff",
+            "pending",
+            "",
+            ""
+        ]
+        
+        for col_idx, value in enumerate(sample_data, 1):
+            ws.cell(row=2, column=col_idx, value=value)
+        
+        # Auto-adjust column widths
+        for col_idx in range(1, len(headers) + 1):
+            col_letter = get_column_letter(col_idx)
+            ws.column_dimensions[col_letter].width = 20
+        
+        # Save to bytes buffer
+        from io import BytesIO
+        template_buffer = BytesIO()
+        wb.save(template_buffer)
+        template_buffer.seek(0)
+        
+        filename = "ticket-import-template.xlsx"
+        response = Response(template_buffer.getvalue(), mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+        return response
+    
+    # Handle GET requests for downloads
     entries = []
     filter_error = None
     cols = set()
@@ -405,7 +788,7 @@ def backups():
             cursor.close()
             db.close()
 
-    # If user requested a CSV download for all tickets (no date filter)
+    # If user requested a download for all tickets (no date filter)
     if export_all and download and not filter_error:
         db = get_db_connection()
         cursor = db.cursor(dictionary=True)
@@ -420,8 +803,6 @@ def backups():
             cursor.close()
             db.close()
 
-        output = io.StringIO()
-        
         # Define a more user-friendly column order
         preferred_order = [
             'ticket_no', 'job_order', 'store_name', 'contact_number', 'email', 
@@ -438,72 +819,80 @@ def backups():
         else:
             fieldnames = list(cols)
 
-        if fieldnames:
-            writer = csv.DictWriter(output, fieldnames=fieldnames)
+        # Generate file based on format
+        if format_type == "excel":
+            excel_data = create_excel_file(entries, fieldnames)
+            filename = "tickets-all.xlsx"
+            response = Response(excel_data, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+            return response
+        else:  # Default to CSV
+            output = io.StringIO()
             
-            # Write header with better column names
-            header_mapping = {
-                'ticket_no': 'Ticket No',
-                'job_order': 'Job Order',
-                'store_name': 'Store Name',
-                'contact_number': 'Contact Number',
-                'email': 'Email',
-                'subject': 'Subject',
-                'concern': 'Concern',
-                'reported_concern': 'Reported Concern',
-                'service_done': 'Service Done',
-                'labor_fee': 'Labor Fee',
-                'assigned_it': 'Assigned IT',
-                'assigned_to': 'Assigned To',
-                'status': 'Status',
-                'date': 'Date',
-                'date_completed': 'Date Completed',
-                'created_at': 'Created At',
-                'remedy': 'Remedy'
-            }
-            
-            # Write custom header
-            custom_header = [header_mapping.get(field, field.replace('_', ' ').title()) for field in fieldnames]
-            writer.writerow(dict(zip(fieldnames, custom_header)))
-            
-            # Write data rows
-            for row in entries:
-                # Format the row for better readability
-                formatted_row = {}
-                for field in fieldnames:
-                    value = row.get(field, '')
-                    
-                    if value is None:
-                        formatted_row[field] = ''
-                    elif field in ['date', 'date_completed', 'created_at'] and value:
-                        # Format datetime fields
-                        if isinstance(value, datetime):
-                            formatted_row[field] = value.strftime('%Y-%m-%d %H:%M:%S')
+            if fieldnames:
+                writer = csv.DictWriter(output, fieldnames=fieldnames)
+                
+                # Write header with better column names
+                header_mapping = {
+                    'ticket_no': 'Ticket No',
+                    'job_order': 'Job Order',
+                    'store_name': 'Store Name',
+                    'contact_number': 'Contact Number',
+                    'email': 'Email',
+                    'subject': 'Subject',
+                    'concern': 'Concern',
+                    'reported_concern': 'Reported Concern',
+                    'service_done': 'Service Done',
+                    'labor_fee': 'Labor Fee',
+                    'assigned_it': 'Assigned IT',
+                    'assigned_to': 'Assigned To',
+                    'status': 'Status',
+                    'date': 'Date',
+                    'date_completed': 'Date Completed',
+                    'created_at': 'Created At',
+                    'remedy': 'Remedy'
+                }
+                
+                # Write custom header
+                custom_header = [header_mapping.get(field, field.replace('_', ' ').title()) for field in fieldnames]
+                writer.writerow(dict(zip(fieldnames, custom_header)))
+                
+                # Write data rows
+                for row in entries:
+                    # Format the row for better readability
+                    formatted_row = {}
+                    for field in fieldnames:
+                        value = row.get(field, '')
+                        
+                        if value is None:
+                            formatted_row[field] = ''
+                        elif field in ['date', 'date_completed', 'created_at'] and value:
+                            # Format datetime fields
+                            if isinstance(value, datetime):
+                                formatted_row[field] = value.strftime('%Y-%m-%d %H:%M:%S')
+                            else:
+                                formatted_row[field] = str(value)
+                        elif field == 'labor_fee' and value:
+                            # Format currency
+                            try:
+                                formatted_row[field] = f"{float(value):.2f}"
+                            except (ValueError, TypeError):
+                                formatted_row[field] = str(value)
                         else:
                             formatted_row[field] = str(value)
-                    elif field == 'labor_fee' and value:
-                        # Format currency
-                        try:
-                            formatted_row[field] = f"{float(value):.2f}"
-                        except (ValueError, TypeError):
-                            formatted_row[field] = str(value)
-                    else:
-                        formatted_row[field] = str(value)
-                
-                writer.writerow(formatted_row)
+                    
+                    writer.writerow(formatted_row)
 
-        csv_data = output.getvalue()
-        output.close()
+            csv_data = output.getvalue()
+            output.close()
 
-        filename = "tickets-all.csv"
-        response = Response(csv_data, mimetype="text/csv")
-        response.headers["Content-Disposition"] = f"attachment; filename={filename}"
-        return response
+            filename = "tickets-all.csv"
+            response = Response(csv_data, mimetype="text/csv")
+            response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+            return response
 
-    # If user requested a CSV download and we have filters (with or without date), return CSV instead of HTML
+    # If user requested a download and we have filters (with or without date), return file instead of HTML
     if download and not filter_error and (selected_date_str or status_filter or store_filter):
-        output = io.StringIO()
-        
         # Define a more user-friendly column order
         preferred_order = [
             'ticket_no', 'job_order', 'store_name', 'contact_number', 'email', 
@@ -521,76 +910,98 @@ def backups():
         elif cols:
             fieldnames = list(cols)
 
-        if fieldnames:
-            writer = csv.DictWriter(output, fieldnames=fieldnames)
+        # Generate file based on format
+        if format_type == "excel":
+            excel_data = create_excel_file(entries, fieldnames)
             
-            # Write header with better column names
-            header_mapping = {
-                'ticket_no': 'Ticket No',
-                'job_order': 'Job Order',
-                'store_name': 'Store Name',
-                'contact_number': 'Contact Number',
-                'email': 'Email',
-                'subject': 'Subject',
-                'concern': 'Concern',
-                'reported_concern': 'Reported Concern',
-                'service_done': 'Service Done',
-                'labor_fee': 'Labor Fee',
-                'assigned_it': 'Assigned IT',
-                'assigned_to': 'Assigned To',
-                'status': 'Status',
-                'date': 'Date',
-                'created_at': 'Created At',
-                'remedy': 'Remedy'
-            }
+            # Generate filename with filters
+            filename_parts = ["tickets"]
+            if selected_date_str:
+                filename_parts.append(selected_date_str)
+            if status_filter:
+                filename_parts.append(f"status-{status_filter}")
+            if store_filter:
+                filename_parts.append(f"store-{store_filter.lower().replace(' ', '-')}")
+            if not selected_date_str and not status_filter and not store_filter:
+                filename_parts.append("all")
+            filename = "-".join(filename_parts) + ".xlsx"
             
-            # Write custom header
-            custom_header = [header_mapping.get(field, field.replace('_', ' ').title()) for field in fieldnames]
-            writer.writerow(dict(zip(fieldnames, custom_header)))
+            response = Response(excel_data, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+            return response
+        else:  # Default to CSV
+            output = io.StringIO()
             
-            # Write data rows
-            for row in entries:
-                # Format the row for better readability
-                formatted_row = {}
-                for field in fieldnames:
-                    value = row.get(field, '')
-                    
-                    if value is None:
-                        formatted_row[field] = ''
-                    elif field in ['date', 'date_completed', 'created_at'] and value:
-                        # Format datetime fields
-                        if isinstance(value, datetime):
-                            formatted_row[field] = value.strftime('%Y-%m-%d %H:%M:%S')
+            if fieldnames:
+                writer = csv.DictWriter(output, fieldnames=fieldnames)
+                
+                # Write header with better column names
+                header_mapping = {
+                    'ticket_no': 'Ticket No',
+                    'job_order': 'Job Order',
+                    'store_name': 'Store Name',
+                    'contact_number': 'Contact Number',
+                    'email': 'Email',
+                    'subject': 'Subject',
+                    'concern': 'Concern',
+                    'reported_concern': 'Reported Concern',
+                    'service_done': 'Service Done',
+                    'labor_fee': 'Labor Fee',
+                    'assigned_it': 'Assigned IT',
+                    'assigned_to': 'Assigned To',
+                    'status': 'Status',
+                    'date': 'Date',
+                    'created_at': 'Created At',
+                    'remedy': 'Remedy'
+                }
+                
+                # Write custom header
+                custom_header = [header_mapping.get(field, field.replace('_', ' ').title()) for field in fieldnames]
+                writer.writerow(dict(zip(fieldnames, custom_header)))
+                
+                # Write data rows
+                for row in entries:
+                    # Format the row for better readability
+                    formatted_row = {}
+                    for field in fieldnames:
+                        value = row.get(field, '')
+                        
+                        if value is None:
+                            formatted_row[field] = ''
+                        elif field in ['date', 'date_completed', 'created_at'] and value:
+                            # Format datetime fields
+                            if isinstance(value, datetime):
+                                formatted_row[field] = value.strftime('%Y-%m-%d %H:%M:%S')
+                            else:
+                                formatted_row[field] = str(value)
+                        elif field == 'labor_fee' and value:
+                            # Format currency
+                            try:
+                                formatted_row[field] = f"{float(value):.2f}"
+                            except (ValueError, TypeError):
+                                formatted_row[field] = str(value)
                         else:
                             formatted_row[field] = str(value)
-                    elif field == 'labor_fee' and value:
-                        # Format currency
-                        try:
-                            formatted_row[field] = f"{float(value):.2f}"
-                        except (ValueError, TypeError):
-                            formatted_row[field] = str(value)
-                    else:
-                        formatted_row[field] = str(value)
-                
-                writer.writerow(formatted_row)
+                    
+                    writer.writerow(formatted_row)
 
-        csv_data = output.getvalue()
-        output.close()
+            csv_data = output.getvalue()
+            output.close()
 
-        # Generate filename with filters
-        filename_parts = ["tickets"]
-        if selected_date_str:
-            filename_parts.append(selected_date_str)
-        if status_filter:
-            filename_parts.append(f"status-{status_filter}")
-        if store_filter:
-            filename_parts.append(f"store-{store_filter.lower().replace(' ', '-')}")
-        if not selected_date_str and not status_filter and not store_filter:
-            filename_parts.append("all")
-        filename = "-".join(filename_parts) + ".csv"
-        response = Response(csv_data, mimetype="text/csv")
-        response.headers["Content-Disposition"] = f"attachment; filename={filename}"
-        return response
+            # Generate filename with filters
+            filename_parts = ["tickets"]
+            if selected_date_str:
+                filename_parts.append(selected_date_str)
+            if status_filter:
+                filename_parts.append(f"status-{status_filter}")
+            if store_filter:
+                filename_parts.append(f"store-{store_filter.lower().replace(' ', '-')}")
+            if not selected_date_str and not status_filter and not store_filter:
+                filename_parts.append("all")
+            filename = "-".join(filename_parts) + ".csv"
+            response = Response(csv_data, mimetype="text/csv")
+            response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+            return response
 
     return render_template(
         "backup.html",
@@ -600,6 +1011,8 @@ def backups():
         filter_error=filter_error,
         status_filter=status_filter,
         store_filter=store_filter,
+        upload_error=upload_error,
+        upload_success=upload_success,
     )
 
 
@@ -959,7 +1372,7 @@ def add_ticket():
         # a phone number or an email address (at least one must be provided).
         if name and subject and reported_concern and (contact_number or email):
             db = get_db_connection()
-            cursor = db.cursor()
+            cursor = db.cursor(dictionary=True)
             try:
                 cursor.execute("SHOW COLUMNS FROM entries")
                 cols = {row[0] for row in cursor.fetchall()}
@@ -1064,7 +1477,7 @@ def add_ticket():
     next_jo = None
     try:
         db = get_db_connection()
-        cursor = db.cursor()
+        cursor = db.cursor(dictionary=True)
         try:
             cursor.execute("SHOW COLUMNS FROM entries")
             cols = {row[0] for row in cursor.fetchall()}
@@ -1653,6 +2066,12 @@ def placeholder2():
 @login_required
 def placeholder3():
     return render_template("placeholder3.html", active_page="placeholder3")
+
+
+@app.route("/quotations")
+@login_required
+def quotations():
+    return render_template("quotations.html", active_page="quotations")
 
 
 @app.context_processor
