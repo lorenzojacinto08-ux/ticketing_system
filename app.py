@@ -951,7 +951,7 @@ def backups():
             output.close()
 
             filename = "tickets-all.csv"
-            response = Response(csv_data, mimetype="text/csv")
+            response = Response(csv_data.encode('utf-8'), mimetype="text/csv; charset=utf-8")
             response.headers["Content-Disposition"] = f"attachment; filename={filename}"
             return response
 
@@ -1063,7 +1063,7 @@ def backups():
             if not selected_date_str and not status_filter and not store_filter:
                 filename_parts.append("all")
             filename = "-".join(filename_parts) + ".csv"
-            response = Response(csv_data, mimetype="text/csv")
+            response = Response(csv_data.encode('utf-8'), mimetype="text/csv; charset=utf-8")
             response.headers["Content-Disposition"] = f"attachment; filename={filename}"
             return response
 
@@ -1743,7 +1743,7 @@ def download_csv_template():
     csv_data = output.getvalue()
     output.close()
     
-    response = Response(csv_data, mimetype="text/csv")
+    response = Response(csv_data.encode('utf-8'), mimetype="text/csv; charset=utf-8")
     response.headers["Content-Disposition"] = "attachment; filename=ticket_template.csv"
     return response
 
