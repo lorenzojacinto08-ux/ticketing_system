@@ -551,7 +551,6 @@ def backups():
         if file and file.filename and file.filename.endswith(('.xlsx', '.xls')):
             try:
                 from openpyxl import load_workbook
-                import io
                 
                 # Read the Excel file
                 excel_data = file.read()
