@@ -19,34 +19,13 @@ load_dotenv()
 app = Flask(__name__)
 
 # --- Logging configuration ---
-# Use stdout logging for Railway deployment (read-only filesystem)
-if os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("DYNO"):
-    # Check if logs volume is available
-    logs_dir = "/app/logs"
-    if os.path.exists(logs_dir) and os.access(logs_dir, os.W_OK):
-        # Use persistent volume for logs
-        LOG_FILE_PATH = os.path.join(logs_dir, "app.log")
-        _log_handler = RotatingFileHandler(LOG_FILE_PATH, maxBytes=1_000_000, backupCount=3)
-        _log_handler.setLevel(logging.INFO)
-        _log_handler.setFormatter(
-            logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-        )
-    else:
-        # Railway/Heroku style deployment - log to stdout
-        import sys
-        _log_handler = logging.StreamHandler(sys.stdout)
-        _log_handler.setLevel(logging.INFO)
-        _log_handler.setFormatter(
-            logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-        )
-else:
-    # Local development - log to file
-    LOG_FILE_PATH = os.path.join(os.path.dirname(__file__), "app.log")
-    _log_handler = RotatingFileHandler(LOG_FILE_PATH, maxBytes=1_000_000, backupCount=3)
-    _log_handler.setLevel(logging.INFO)
-    _log_handler.setFormatter(
-        logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-    )
+# Local setup: log to a rotating file beside the app.
+LOG_FILE_PATH = os.path.join(os.path.dirname(__file__), "app.log")
+_log_handler = RotatingFileHandler(LOG_FILE_PATH, maxBytes=1_000_000, backupCount=3)
+_log_handler.setLevel(logging.INFO)
+_log_handler.setFormatter(
+    logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+)
 
 app.logger.setLevel(logging.INFO)
 app.logger.addHandler(_log_handler)
@@ -115,7 +94,7 @@ def tojson_pretty(value):
 
 # Function to get a fresh DB connection
 def get_db_connection():
-    # Try Railway's DATABASE_URL first, then fall back to individual variables
+    # Support a full DATABASE_URL, then fall back to individual variables.
     database_url = os.getenv("DATABASE_URL")
     
     if database_url:
@@ -170,6 +149,25 @@ def run_migrations():
         cursor.execute("SHOW COLUMNS FROM entries LIKE 'labor_fee'")
         if not cursor.fetchone():
             cursor.execute("ALTER TABLE entries ADD COLUMN labor_fee DECIMAL(10, 2) DEFAULT NULL AFTER service_done")
+
+        # Transactions: add paid_via column if missing
+        try:
+            cursor.execute("SHOW TABLES LIKE 'transactions'")
+            if cursor.fetchone():
+                cursor.execute("SHOW COLUMNS FROM transactions LIKE 'paid_via'")
+                if not cursor.fetchone():
+                    cursor.execute(
+                        "ALTER TABLE transactions ADD COLUMN paid_via VARCHAR(32) DEFAULT NULL AFTER payment_status"
+                    )
+
+                cursor.execute("SHOW COLUMNS FROM transactions LIKE 'date_paid'")
+                if not cursor.fetchone():
+                    cursor.execute(
+                        "ALTER TABLE transactions ADD COLUMN date_paid DATETIME DEFAULT NULL AFTER paid_via"
+                    )
+        except Exception:
+            # Don't let migration errors break the app
+            pass
         
         db.commit()
         cursor.close()
@@ -283,7 +281,7 @@ def debug_jo_generation():
 
 @app.route("/health")
 def health_check():
-    """Health check endpoint for Railway deployment"""
+    """Health check endpoint."""
     try:
         # Test database connection
         db = get_db_connection()
@@ -1079,6 +1077,306 @@ def backups():
     )
 
 
+@app.route("/transactions")
+@login_required
+def transactions():
+    """List ticket transactions with service fee and payment status."""
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    transactions_list = []
+    try:
+        # Guard against missing schema in older databases.
+        cursor.execute("SHOW TABLES LIKE 'transactions'")
+        if cursor.fetchone() is None:
+            flash("Transactions table not found in the database.", "warning")
+            transactions_list = []
+        else:
+            # Only show transactions for completed tickets with an entered service fee.
+            # This makes the transactions page a read-only projection of the tickets logic.
+            pk_col, cols = get_entries_pk_column(db)
+
+            status_col = None
+            if "status" in cols:
+                status_col = "status"
+            elif "Status" in cols:
+                status_col = "Status"
+
+            # Optional ticket fields (varies across legacy schemas)
+            subject_col = next(
+                (c for c in ("subject", "Concern", "concern", "details", "description") if c in cols),
+                None,
+            )
+            service_done_col = "service_done" if "service_done" in cols else None
+            ticket_date_col = "date" if "date" in cols else ("created_at" if "created_at" in cols else None)
+
+            if pk_col and status_col:
+                subject_select = f"e.{subject_col} AS subject" if subject_col else "NULL AS subject"
+                service_done_select = f"e.{service_done_col} AS service_done" if service_done_col else "NULL AS service_done"
+                ticket_date_select = f"e.{ticket_date_col} AS ticket_date" if ticket_date_col else "NULL AS ticket_date"
+                cursor.execute(
+                    f"""
+                    SELECT
+                        t.transaction_id,
+                        t.ticket_no,
+                        t.job_order,
+                        t.store_name,
+                        t.service_fee,
+                        t.transaction_date,
+                        e.{status_col} AS ticket_status,
+                        {subject_select},
+                        {service_done_select},
+                        {ticket_date_select},
+                        t.payment_status,
+                        t.paid_via,
+                        t.date_paid,
+                        t.notes
+                    FROM transactions t
+                    JOIN entries e ON e.{pk_col} = t.ticket_no
+                    WHERE COALESCE(t.service_fee, 0) > 0
+                      AND LOWER(COALESCE(e.{status_col}, '')) IN ('completed', 'complete')
+                    ORDER BY t.transaction_date DESC
+                    """
+                )
+            else:
+                # Fallback if entries schema is unexpected: still filter by service_fee only.
+                cursor.execute(
+                    """
+                    SELECT
+                        t.transaction_id,
+                        t.ticket_no,
+                        t.job_order,
+                        t.store_name,
+                        t.service_fee,
+                        t.transaction_date,
+                        t.status AS ticket_status,
+                        NULL AS subject,
+                        NULL AS service_done,
+                        t.transaction_date AS ticket_date,
+                        t.payment_status,
+                        t.paid_via,
+                        t.date_paid,
+                        t.notes
+                    FROM transactions t
+                    WHERE COALESCE(t.service_fee, 0) > 0
+                    ORDER BY t.transaction_date DESC
+                    """
+                )
+            transactions_list = cursor.fetchall()
+    finally:
+        cursor.close()
+        db.close()
+
+    paid_count = 0
+    for t in transactions_list:
+        if (t.get("payment_status") or "").lower() == "paid":
+            paid_count += 1
+    unpaid_count = max(len(transactions_list) - paid_count, 0)
+
+    return render_template(
+        "transactions.html",
+        active_page="transactions",
+        transactions=transactions_list,
+        paid_count=paid_count,
+        unpaid_count=unpaid_count,
+    )
+
+
+@app.route("/transactions/<int:transaction_id>/payment", methods=["POST"])
+@login_required
+@role_required("super_admin", "admin")
+def set_transaction_payment(transaction_id: int):
+    """Update a transaction's payment_status (paid/unpaid)."""
+    requested = (request.form.get("payment_status") or "").strip().lower()
+    if requested not in {"paid", "unpaid"}:
+        flash("Invalid payment status.", "danger")
+        return redirect(url_for("transactions"))
+
+    paid_via_raw = (request.form.get("paid_via") or "").strip().lower()
+    allowed_paid_via = {"", "cash", "check", "card", "bank_transfer"}
+    if paid_via_raw not in allowed_paid_via:
+        flash("Invalid paid via option.", "danger")
+        return redirect(url_for("transactions"))
+
+    paid_via_val = None
+    if requested == "paid":
+        paid_via_val = paid_via_raw or None
+    else:
+        paid_via_val = None
+
+    # Set/clear date_paid based on payment status.
+    date_paid_sql = "NOW()" if requested == "paid" else "NULL"
+
+    db = get_db_connection()
+    cursor = db.cursor()
+    try:
+        cursor.execute(
+            f"UPDATE transactions SET payment_status = %s, paid_via = %s, date_paid = {date_paid_sql} WHERE transaction_id = %s",
+            (requested, paid_via_val, transaction_id),
+        )
+        updated = cursor.rowcount
+        db.commit()
+    finally:
+        cursor.close()
+        db.close()
+
+    if updated:
+        flash(f"Payment status updated to {requested.title()}.", "success")
+    else:
+        flash("Transaction not found.", "warning")
+    return redirect(url_for("transactions"))
+
+
+@app.route("/transactions/export", methods=["GET"])
+@login_required
+def export_transactions_range():
+    """Export transactions for a date range (from/to, YYYY-MM-DD) as CSV."""
+    from_str = (request.args.get("from") or "").strip()
+    to_str = (request.args.get("to") or "").strip()
+    try:
+        from_date = datetime.strptime(from_str, "%Y-%m-%d").date()
+        to_date = datetime.strptime(to_str, "%Y-%m-%d").date()
+    except ValueError:
+        flash("Invalid date range. Please use the date pickers.", "danger")
+        return redirect(url_for("transactions"))
+
+    if to_date < from_date:
+        flash("Invalid date range. 'To' cannot be earlier than 'From'.", "danger")
+        return redirect(url_for("transactions"))
+
+    start_dt = datetime(from_date.year, from_date.month, from_date.day, 0, 0, 0)
+    # Use < end_dt to be inclusive of `to` date.
+    from datetime import timedelta
+    end_dt = datetime(to_date.year, to_date.month, to_date.day, 0, 0, 0) + timedelta(days=1)
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    rows = []
+    try:
+        cursor.execute("SHOW TABLES LIKE 'transactions'")
+        if cursor.fetchone() is None:
+            flash("Transactions table not found in the database.", "warning")
+            return redirect(url_for("transactions"))
+
+        pk_col, cols = get_entries_pk_column(db)
+        status_col = "status" if "status" in cols else ("Status" if "Status" in cols else None)
+        subject_col = next((c for c in ("subject", "Concern", "concern", "details", "description") if c in cols), None)
+
+        if pk_col and status_col:
+            subject_select = f"e.{subject_col} AS subject" if subject_col else "NULL AS subject"
+            cursor.execute(
+                f"""
+                SELECT
+                    t.transaction_id,
+                    t.ticket_no,
+                    t.job_order,
+                    t.store_name,
+                    t.service_fee,
+                    t.payment_status,
+                    t.paid_via,
+                    t.date_paid,
+                    t.transaction_date,
+                    {subject_select},
+                    t.notes
+                FROM transactions t
+                JOIN entries e ON e.{pk_col} = t.ticket_no
+                WHERE COALESCE(t.service_fee, 0) > 0
+                  AND LOWER(COALESCE(e.{status_col}, '')) IN ('completed', 'complete')
+                  AND t.transaction_date >= %s
+                  AND t.transaction_date < %s
+                ORDER BY t.transaction_date DESC
+                """,
+                (start_dt, end_dt),
+            )
+        else:
+            cursor.execute(
+                """
+                SELECT
+                    t.transaction_id,
+                    t.ticket_no,
+                    t.job_order,
+                    t.store_name,
+                    t.service_fee,
+                    t.payment_status,
+                    t.paid_via,
+                    t.date_paid,
+                    t.transaction_date,
+                    NULL AS subject,
+                    t.notes
+                FROM transactions t
+                WHERE COALESCE(t.service_fee, 0) > 0
+                  AND t.transaction_date >= %s
+                  AND t.transaction_date < %s
+                ORDER BY t.transaction_date DESC
+                """,
+                (start_dt, end_dt),
+            )
+
+        rows = cursor.fetchall()
+    finally:
+        cursor.close()
+        db.close()
+
+    fieldnames = [
+        "transaction_id",
+        "ticket_no",
+        "job_order",
+        "store_name",
+        "subject",
+        "service_fee",
+        "payment_status",
+        "paid_via",
+        "date_paid",
+        "transaction_date",
+        "notes",
+    ]
+
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+
+    header_mapping = {
+        "transaction_id": "Transaction ID",
+        "ticket_no": "Ticket No",
+        "job_order": "Job Order",
+        "store_name": "Store Name",
+        "subject": "Subject",
+        "service_fee": "Service Fee",
+        "payment_status": "Payment Status",
+        "paid_via": "Paid Via",
+        "date_paid": "Date Paid",
+        "transaction_date": "Transaction Date",
+        "notes": "Notes",
+    }
+    writer.writerow({k: header_mapping.get(k, k) for k in fieldnames})
+
+    for r in rows:
+        formatted = {}
+        for f in fieldnames:
+            v = (r or {}).get(f)
+            if v is None:
+                formatted[f] = ""
+            elif f in {"date_paid", "transaction_date"} and v:
+                if isinstance(v, datetime):
+                    formatted[f] = v.strftime("%Y-%m-%d %H:%M:%S")
+                else:
+                    formatted[f] = str(v)
+            elif f == "service_fee" and v != "":
+                try:
+                    formatted[f] = f"{float(v):.2f}"
+                except Exception:
+                    formatted[f] = str(v)
+            else:
+                formatted[f] = str(v)
+        writer.writerow(formatted)
+
+    csv_data = output.getvalue()
+    output.close()
+
+    filename = f"transactions-{from_date.strftime('%Y-%m-%d')}-to-{to_date.strftime('%Y-%m-%d')}.csv"
+    response = Response(csv_data.encode("utf-8"), mimetype="text/csv; charset=utf-8")
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    return response
+
+
 def _can_manage_user(target_role):
     """True if the current session user can manage a user with target_role."""
     current = session.get("user_role")
@@ -1598,17 +1896,68 @@ def handle_csv_upload():
             cursor.execute("SHOW COLUMNS FROM entries")
             cols = {row[0] for row in cursor.fetchall()}
             jo_col = "job_order" if "job_order" in cols else ("remedy" if "remedy" in cols else None)
+
+            def _first_nonempty(row_data, keys, default=""):
+                for k in keys:
+                    v = row_data.get(k)
+                    if v is not None and str(v).strip() != "":
+                        return str(v).strip()
+                return default
+
+            def _parse_ticket_date(raw_value):
+                """
+                Parse CSV ticket date into MySQL-friendly datetime string.
+                Accepted examples:
+                - 2026-01-08
+                - 2026-01-08 14:30:00
+                - 01/08/2026
+                - 1/8/2026
+                """
+                raw = (raw_value or "").strip()
+                if not raw:
+                    return None
+
+                dt_formats = [
+                    "%Y-%m-%d %H:%M:%S",
+                    "%Y-%m-%d %H:%M",
+                    "%Y-%m-%d",
+                    "%m/%d/%Y",
+                    "%m/%d/%Y %H:%M:%S",
+                    "%m/%d/%Y %H:%M",
+                ]
+                for fmt in dt_formats:
+                    try:
+                        parsed = datetime.strptime(raw, fmt)
+                        if fmt in ("%Y-%m-%d", "%m/%d/%Y"):
+                            parsed = parsed.replace(hour=0, minute=0, second=0, microsecond=0)
+                        return parsed.strftime("%Y-%m-%d %H:%M:%S")
+                    except ValueError:
+                        continue
+                return None
             
             for row_num, row in enumerate(csv_reader, start=2):  # Start at 2 to account for header
                 try:
                     # Extract and validate data
-                    store_name = row.get('store_name', '').strip()
-                    subject = row.get('subject', '').strip()
-                    reported_concern = row.get('reported_concern', '').strip()
-                    contact_number = row.get('contact_number', '').strip() or None
-                    email = row.get('email', '').strip() or None
-                    assigned_to = row.get('assigned_to', '').strip() or None
-                    status = row.get('status', 'pending').strip().lower()
+                    store_name = _first_nonempty(row, ["store_name"])
+                    subject = _first_nonempty(row, ["subject"])
+                    reported_concern = _first_nonempty(row, ["reported_concern", "reportedConcern", "concern"])
+                    contact_number = _first_nonempty(row, ["contact_number", "contact"], default="") or None
+                    email = _first_nonempty(row, ["email"], default="") or None
+                    assigned_to = _first_nonempty(row, ["assigned_to", "assigned_it"], default="") or None
+                    status = _first_nonempty(row, ["status"], default="pending").lower()
+                    ticket_date_raw = _first_nonempty(
+                        row,
+                        ["ticket_date", "date_ticket_made", "ticket_made_date", "date_made", "date"],
+                        default="",
+                    )
+                    parsed_ticket_date = _parse_ticket_date(ticket_date_raw)
+                    if ticket_date_raw and not parsed_ticket_date:
+                        tickets_failed += 1
+                        error_messages.append(
+                            f"Row {row_num}: Invalid ticket date '{ticket_date_raw}'. "
+                            "Use YYYY-MM-DD or MM/DD/YYYY (optional time allowed)."
+                        )
+                        continue
                     
                     # Validate required fields
                     if not store_name or not subject or not reported_concern:
@@ -1670,9 +2019,15 @@ def handle_csv_upload():
                         add_param_col("status", status)
                     
                     if "date" in cols:
-                        add_sql_col("date", "NOW()")
+                        if parsed_ticket_date:
+                            add_param_col("date", parsed_ticket_date)
+                        else:
+                            add_sql_col("date", "NOW()")
                     elif "created_at" in cols:
-                        add_sql_col("created_at", "NOW()")
+                        if parsed_ticket_date:
+                            add_param_col("created_at", parsed_ticket_date)
+                        else:
+                            add_sql_col("created_at", "NOW()")
                     
                     # Insert ticket
                     sql = f"INSERT INTO entries ({', '.join(insert_cols)}) VALUES ({', '.join(insert_sql_values)})"
@@ -1712,7 +2067,7 @@ def download_csv_template():
     
     fieldnames = [
         'store_name', 'contact_number', 'email', 'subject', 
-        'reported_concern', 'assigned_to', 'status'
+        'reported_concern', 'assigned_to', 'status', 'ticket_date'
     ]
     
     writer = csv.DictWriter(output, fieldnames=fieldnames)
@@ -1726,7 +2081,8 @@ def download_csv_template():
         'subject': 'Hardware Issue',
         'reported_concern': 'POS terminal not working properly',
         'assigned_to': 'Jake',
-        'status': 'pending'
+        'status': 'pending',
+        'ticket_date': '2026-01-08'
     })
     
     writer.writerow({
@@ -1736,7 +2092,8 @@ def download_csv_template():
         'subject': 'Software Update',
         'reported_concern': 'System needs software update',
         'assigned_to': 'JR',
-        'status': 'ongoing'
+        'status': 'ongoing',
+        'ticket_date': '01/09/2026'
     })
     
     csv_data = output.getvalue()
@@ -1840,6 +2197,44 @@ def edit_ticket(ticket_id):
             params.append(ticket_id)
             cursor.execute(sql, params)
             db.commit()
+
+            # Sync the transactions table from ticket completion + fee entry.
+            # The schema enforces one transaction per ticket via UNIQUE(ticket_no).
+            try:
+                cursor.execute("SHOW TABLES LIKE 'transactions'")
+                has_transactions = cursor.fetchone() is not None
+            except Exception:
+                has_transactions = False
+
+            def _to_amount(val: str) -> float:
+                try:
+                    return float((val or "").strip())
+                except Exception:
+                    return 0.0
+
+            normalized_status = "completed" if status in {"complete", "completed"} else status
+            fee_amount = _to_amount(labor_fee)
+
+            if has_transactions:
+                if normalized_status == "completed" and fee_amount > 0:
+                    # Store the entered fee as the service_fee for transactions reporting.
+                    cursor.execute(
+                        """
+                        INSERT INTO transactions (ticket_no, job_order, store_name, service_fee, status, payment_status, paid_via)
+                        VALUES (%s, %s, %s, %s, %s, 'unpaid', NULL)
+                        ON DUPLICATE KEY UPDATE
+                            job_order = VALUES(job_order),
+                            store_name = VALUES(store_name),
+                            service_fee = VALUES(service_fee),
+                            status = VALUES(status)
+                        """,
+                        (ticket_id, job_order or None, name or None, fee_amount, normalized_status),
+                    )
+                    db.commit()
+                else:
+                    # If the ticket isn't completed or doesn't have a fee, ensure it does not appear in transactions.
+                    cursor.execute("DELETE FROM transactions WHERE ticket_no = %s", (ticket_id,))
+                    db.commit()
 
             old_name = (existing.get("store_name") or existing.get("Name")) if existing else None
             old_subject = (existing.get("subject") or existing.get("Concern") or existing.get("concern")) if existing else None
@@ -2226,10 +2621,11 @@ if __name__ == "__main__":
     
     # Configure for network access
     port = int(os.environ.get("PORT", 5000))
+    host = os.environ.get("HOST", "127.0.0.1")
     debug_mode = os.environ.get("FLASK_ENV") == "development"
     
     app.run(
-        host="192.168.1.19",  # Use specific IP address
-        port=port,           # Use Railway's PORT or default to 5000
+        host=host,  # Local-only by default
+        port=port,           # Use PORT or default to 5000
         debug=debug_mode     # Only use debug in development
     )

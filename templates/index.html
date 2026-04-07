@@ -178,7 +178,7 @@
                                                     {{ status_label }}
                                                 </span>
                                             </td>
-                                            <td>{{ entry.date or entry.created_at or '—' }}</td>
+                                            <td class="ticket-date">{{ entry.date or entry.created_at or '—' }}</td>
                                             <td class="table-actions">
                                                 <a href="{{ url_for('edit_ticket', ticket_id=(entry.ticket_no or entry.id)) }}"
                                                    class="icon-button icon-button-edit"
@@ -333,8 +333,8 @@
                 storeEl.textContent = store ? store : 'No store name';
                 idEl.textContent = id;
                 assigneeEl.textContent = assignee;
-                dateEl.textContent = date;
-                dateCompletedEl.textContent = dateCompleted;
+                dateEl.textContent = formatLongDate(date);
+                dateCompletedEl.textContent = formatLongDate(dateCompleted);
                 joEl.textContent = jo;
                 contactEl.textContent = contact;
                 emailEl.textContent = email;
@@ -393,6 +393,14 @@
                 return (value || '').toString().toLowerCase();
             }
 
+            function formatLongDate(value) {
+                const raw = (value || '').toString().trim();
+                if (!raw || raw === '—') return '—';
+                const dt = new Date(raw);
+                if (Number.isNaN(dt.getTime())) return raw;
+                return new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(dt);
+            }
+
             function applyTicketFilters() {
                 const query = normalize(searchInput ? searchInput.value : '');
                 const selectedStatus = statusSelect ? statusSelect.value : '';
@@ -439,6 +447,11 @@
                     applyTicketFilters();
                 });
             }
+
+            // Format the Date column in the ticket table.
+            document.querySelectorAll('td.ticket-date').forEach(function (cell) {
+                cell.textContent = formatLongDate(cell.textContent);
+            });
         });
     </script>
 </body>

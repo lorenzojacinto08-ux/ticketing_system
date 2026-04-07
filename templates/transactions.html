@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions • JDMT Ticketing</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    {% include 'success_notifications.html' %}
+</head>
+<body>
+    <div class="app-shell">
+        {% include 'header.html' %}
+
+        <div class="layout">
+            {% include 'sidebar.html' %}
+
+            <main class="content">
+                <div class="content-header">
+                    <h1>Transactions</h1>
+                    <p class="subtitle">Track tickets that have a service fee and their payment status</p>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header card-header-flex">
+                        <div>
+                            <h2>Transaction backup</h2>
+                            <p class="subtitle mb-0">Export transactions by date range.</p>
+                        </div>
+                        <span class="pill pill-muted pill-subtle" id="tx-export-pill">
+                            <i class="bi bi-calendar-range"></i>
+                            Choose dates
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <form method="get" action="{{ url_for('export_transactions_range') }}" class="row g-3 align-items-end" id="tx-export-form">
+                            <div class="col-12 col-md-4 col-lg-3">
+                                <label for="tx-from" class="form-label">From</label>
+                                <input type="date" id="tx-from" name="from" class="form-control" required>
+                            </div>
+                            <div class="col-12 col-md-4 col-lg-3">
+                                <label for="tx-to" class="form-label">To</label>
+                                <input type="date" id="tx-to" name="to" class="form-control" required>
+                            </div>
+                            <div class="col-12 col-md-4 col-lg-3">
+                                <button type="submit" class="btn btn-outline-secondary w-100">
+                                    <i class="bi bi-filetype-csv"></i>
+                                    Download CSV
+                                </button>
+                                <div class="form-text">Includes only service-fee transactions in the selected range.</div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Flash messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div class="card mb-3">
+                    <div class="card-body d-flex gap-3 flex-wrap">
+                        <span class="status-badge status-complete payment-badge payment-paid">
+                            <i class="bi bi-check2-circle"></i>
+                            Paid ({{ paid_count }})
+                        </span>
+                        <span class="status-badge status-pending payment-badge payment-unpaid">
+                            <i class="bi bi-clock-fill"></i>
+                            Unpaid ({{ unpaid_count }})
+                        </span>
+                    </div>
+                </div>
+
+                {% if transactions and transactions|length > 0 %}
+                    <div class="card" id="transactions-table">
+                        <div class="card-header">
+                            <h2>Service Fee Payments</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-wrapper">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Transaction</th>
+                                            <th>Store</th>
+                                            <th>JO</th>
+                                            <th>Service Fee</th>
+                                            <th>Payment</th>
+                                            <th>Paid via</th>
+                                            <th>Date paid</th>
+                                            <th>Ticket Status</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for t in transactions %}
+                                            {% set payment_status = (t.payment_status or 'unpaid')|lower %}
+                                            {% set paid_via = (t.paid_via or '')|lower %}
+                                            {% if payment_status == 'paid' %}
+                                                {% set payment_badge_class = 'payment-paid' %}
+                                                {% set payment_label = 'Paid' %}
+                                                {% set payment_icon = 'bi-check2-circle' %}
+                                            {% else %}
+                                                {% set payment_badge_class = 'payment-unpaid' %}
+                                                {% set payment_label = 'Unpaid' %}
+                                                {% set payment_icon = 'bi-clock-fill' %}
+                                            {% endif %}
+
+                                            <tr class="ticket-row"
+                                                data-transaction-id="{{ t.transaction_id }}"
+                                                data-ticket-id="{{ t.ticket_no }}"
+                                                data-store-name="{{ t.store_name or '' }}"
+                                                data-jo="{{ t.job_order or '' }}"
+                                                data-subject="{{ t.subject or '' }}"
+                                                data-service-done="{{ t.service_done or '' }}"
+                                                data-service-fee="{{ t.service_fee if t.service_fee is not none else 0 }}"
+                                                data-ticket-status="{{ t.ticket_status or '' }}"
+                                                data-payment-status="{{ payment_status }}"
+                                                data-paid-via="{{ paid_via }}"
+                                                data-date-paid="{{ t.date_paid or '' }}"
+                                                data-ticket-date="{{ t.ticket_date or '' }}"
+                                            >
+                                                <td>#{{ t.transaction_id }}</td>
+                                                <td>{{ t.store_name or '—' }}</td>
+                                                <td>{{ t.job_order or '—' }}</td>
+                                                <td>
+                                                    {{ "%.2f"|format(t.service_fee if t.service_fee is not none else 0) }}
+                                                </td>
+                                                <td>
+                                                    <span class="status-badge payment-badge {{ payment_badge_class }}">
+                                                        <i class="bi {{ payment_icon }}"></i>
+                                                        {{ payment_label }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {% if payment_status == 'paid' %}
+                                                        {{ (t.paid_via or '—')|replace('_', ' ')|title }}
+                                                    {% else %}
+                                                        —
+                                                    {% endif %}
+                                                </td>
+                                                <td class="tx-date-paid">
+                                                    {% if payment_status == 'paid' and t.date_paid %}
+                                                        {{ t.date_paid }}
+                                                    {% else %}
+                                                        —
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ t.ticket_status or '—' }}</td>
+                                                <td class="tx-date">{{ t.ticket_date or '—' }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="card empty-state">
+                        <div class="card-body">
+                            <h2>No transactions found</h2>
+                            <p>Only tickets with a service fee will appear here with `Paid` / `Unpaid` status.</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <div id="ticket-modal-overlay" class="ticket-modal-overlay">
+        <div class="ticket-modal">
+            <div class="ticket-modal-header">
+                <div class="ticket-modal-title-group">
+                    <h2 id="tx-modal-title">Transaction details</h2>
+                    <p id="tx-modal-subtitle" class="ticket-modal-store"></p>
+                </div>
+                <button type="button" class="ticket-modal-close" data-ticket-modal-close>&times;</button>
+            </div>
+            <div class="ticket-modal-body">
+                <dl class="ticket-modal-grid">
+                    <div>
+                        <dt>Transaction</dt>
+                        <dd id="tx-modal-transaction"></dd>
+                    </div>
+                    <div>
+                        <dt>Ticket No.</dt>
+                        <dd id="tx-modal-ticket"></dd>
+                    </div>
+                    <div>
+                        <dt>Status</dt>
+                        <dd id="tx-modal-ticket-status"></dd>
+                    </div>
+                    <div>
+                        <dt>Payment</dt>
+                        <dd>
+                            <span id="tx-modal-payment-badge" class="status-badge payment-badge payment-unpaid">
+                                <span id="tx-modal-payment-text">Unpaid</span>
+                            </span>
+                        </dd>
+                    </div>
+                    <div>
+                        <dt>Paid via</dt>
+                        <dd id="tx-modal-paid-via"></dd>
+                    </div>
+                    <div>
+                        <dt>Date paid</dt>
+                        <dd id="tx-modal-date-paid"></dd>
+                    </div>
+                    <div>
+                        <dt>Store</dt>
+                        <dd id="tx-modal-store"></dd>
+                    </div>
+                    <div>
+                        <dt>JO</dt>
+                        <dd id="tx-modal-jo"></dd>
+                    </div>
+                    <div>
+                        <dt>Subject</dt>
+                        <dd id="tx-modal-subject"></dd>
+                    </div>
+                    <div>
+                        <dt>Service Fee</dt>
+                        <dd id="tx-modal-fee"></dd>
+                    </div>
+                    <div>
+                        <dt>Date</dt>
+                        <dd id="tx-modal-date"></dd>
+                    </div>
+                </dl>
+
+                <div class="ticket-modal-section">
+                    <h3 class="ticket-modal-section-title">Service done</h3>
+                    <p id="tx-modal-service-done" class="ticket-modal-concern"></p>
+                </div>
+
+                <div class="ticket-modal-footer d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <a id="tx-modal-edit-ticket" href="#" class="btn btn-outline-secondary">
+                        <i class="bi bi-pencil-square"></i>
+                        Edit ticket
+                    </a>
+
+                    {% if session.get('user_role') in ('super_admin', 'admin') %}
+                        <form id="tx-modal-payment-form" method="post" action="#" style="margin:0;">
+                            <select id="tx-modal-paid-via-select" name="paid_via" class="form-select d-inline-block" style="width:auto;">
+                                <option value="">Select…</option>
+                                <option value="cash">Cash</option>
+                                <option value="check">Check</option>
+                                <option value="card">Card</option>
+                                <option value="bank_transfer">Bank transfer</option>
+                            </select>
+                            <input type="hidden" id="tx-modal-payment-input" name="payment_status" value="paid">
+                            <button type="submit" id="tx-modal-payment-btn" class="btn btn-outline-primary">
+                                Mark Paid
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Transaction export UI: set defaults + show selected range pill.
+            const exportForm = document.getElementById('tx-export-form');
+            const fromInput = document.getElementById('tx-from');
+            const toInput = document.getElementById('tx-to');
+            const exportPill = document.getElementById('tx-export-pill');
+
+            function fmtDateIso(d) {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}`;
+            }
+
+            function updateExportPill() {
+                if (!exportPill) return;
+                const f = (fromInput && fromInput.value) ? fromInput.value : '';
+                const t = (toInput && toInput.value) ? toInput.value : '';
+                if (f && t) {
+                    exportPill.classList.remove('pill-subtle');
+                    exportPill.innerHTML = `<i class="bi bi-calendar-range"></i> ${f} → ${t}`;
+                } else {
+                    exportPill.classList.add('pill-subtle');
+                    exportPill.innerHTML = `<i class="bi bi-calendar-range"></i> Choose dates`;
+                }
+            }
+
+            if (fromInput && toInput) {
+                const now = new Date();
+                const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                if (!fromInput.value) fromInput.value = fmtDateIso(firstOfMonth);
+                if (!toInput.value) toInput.value = fmtDateIso(now);
+                updateExportPill();
+
+                fromInput.addEventListener('change', updateExportPill);
+                toInput.addEventListener('change', updateExportPill);
+            }
+
+            const overlay = document.getElementById('ticket-modal-overlay');
+            const txEl = document.getElementById('tx-modal-transaction');
+            const ticketEl = document.getElementById('tx-modal-ticket');
+            const storeEl = document.getElementById('tx-modal-store');
+            const subtitleEl = document.getElementById('tx-modal-subtitle');
+            const joEl = document.getElementById('tx-modal-jo');
+            const subjectEl = document.getElementById('tx-modal-subject');
+            const feeEl = document.getElementById('tx-modal-fee');
+            const dateEl = document.getElementById('tx-modal-date');
+            const ticketStatusEl = document.getElementById('tx-modal-ticket-status');
+            const paymentBadgeEl = document.getElementById('tx-modal-payment-badge');
+            const paymentTextEl = document.getElementById('tx-modal-payment-text');
+            const paidViaEl = document.getElementById('tx-modal-paid-via');
+            const datePaidEl = document.getElementById('tx-modal-date-paid');
+            const serviceDoneEl = document.getElementById('tx-modal-service-done');
+            const editLinkEl = document.getElementById('tx-modal-edit-ticket');
+
+            const paymentForm = document.getElementById('tx-modal-payment-form');
+            const paymentInput = document.getElementById('tx-modal-payment-input');
+            const paymentBtn = document.getElementById('tx-modal-payment-btn');
+            const paidViaSelect = document.getElementById('tx-modal-paid-via-select');
+
+            function openModalFromRow(row) {
+                if (!row) return;
+
+                const transactionId = row.dataset.transactionId || '—';
+                const ticketId = row.dataset.ticketId || '—';
+                const store = row.dataset.storeName || '—';
+                const jo = row.dataset.jo || '—';
+                const subject = row.dataset.subject || '—';
+                const serviceDone = row.dataset.serviceDone || '—';
+                const serviceFee = row.dataset.serviceFee || '0';
+                const ticketStatus = row.dataset.ticketStatus || '—';
+                const paymentStatus = (row.dataset.paymentStatus || 'unpaid').toLowerCase();
+                const paidVia = (row.dataset.paidVia || '').toLowerCase();
+                const datePaidRaw = row.dataset.datePaid || '';
+                const date = row.dataset.ticketDate || '—';
+
+                txEl.textContent = transactionId === '—' ? '—' : ('#' + transactionId);
+                ticketEl.textContent = ticketId;
+                storeEl.textContent = store;
+                subtitleEl.textContent = store;
+                joEl.textContent = jo;
+                subjectEl.textContent = subject;
+                serviceDoneEl.textContent = serviceDone;
+                ticketStatusEl.textContent = ticketStatus;
+                dateEl.textContent = date;
+
+                const feeNum = Number(serviceFee);
+                if (Number.isFinite(feeNum)) {
+                    feeEl.textContent = feeNum.toFixed(2);
+                } else {
+                    feeEl.textContent = serviceFee;
+                }
+
+                const isPaid = paymentStatus === 'paid';
+                paymentBadgeEl.className = 'status-badge payment-badge ' + (isPaid ? 'payment-paid' : 'payment-unpaid');
+                paymentTextEl.textContent = isPaid ? 'Paid' : 'Unpaid';
+
+                if (paidViaEl) {
+                    if (isPaid && paidVia) {
+                        paidViaEl.textContent = paidVia.replace('_', ' ');
+                    } else {
+                        paidViaEl.textContent = '—';
+                    }
+                }
+
+                function formatLongDate(value) {
+                    if (!value) return '—';
+                    const dt = new Date(value);
+                    if (Number.isNaN(dt.getTime())) return value;
+                    return new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(dt);
+                }
+
+                if (datePaidEl) {
+                    datePaidEl.textContent = isPaid ? formatLongDate(datePaidRaw) : '—';
+                }
+
+                if (editLinkEl) {
+                    editLinkEl.href = '/tickets/' + ticketId + '/edit';
+                }
+
+                if (paymentForm && paymentInput && paymentBtn) {
+                    paymentForm.action = '/transactions/' + transactionId + '/payment';
+                    const nextStatus = isPaid ? 'unpaid' : 'paid';
+                    paymentInput.value = nextStatus;
+                    paymentBtn.textContent = isPaid ? 'Mark Unpaid' : 'Mark Paid';
+
+                    if (paidViaSelect) {
+                        // When switching to paid, allow choosing a method; for unpaid, disable it.
+                        paidViaSelect.disabled = nextStatus === 'unpaid';
+                        paidViaSelect.value = paidVia || '';
+                    }
+                }
+
+                // Format modal date as "March 8, 2026"
+                if (dateEl) {
+                    dateEl.textContent = formatLongDate(date);
+                }
+
+                overlay.classList.add('is-visible');
+                document.body.classList.add('ticket-modal-open');
+            }
+
+            function closeModal() {
+                overlay.classList.remove('is-visible');
+                document.body.classList.remove('ticket-modal-open');
+            }
+
+            document.querySelectorAll('.ticket-row').forEach(function (row) {
+                row.addEventListener('click', function (event) {
+                    if (event.target.closest('a') || event.target.closest('button') || event.target.closest('form')) {
+                        return;
+                    }
+                    openModalFromRow(row);
+                });
+            });
+
+            overlay.addEventListener('click', function (event) {
+                if (event.target === overlay) {
+                    closeModal();
+                }
+            });
+
+            document.querySelectorAll('[data-ticket-modal-close]').forEach(function (btn) {
+                btn.addEventListener('click', closeModal);
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && overlay.classList.contains('is-visible')) {
+                    closeModal();
+                }
+            });
+
+            // Format date-paid cells in the table to "March 8, 2026"
+            document.querySelectorAll('td.tx-date-paid').forEach(function (cell) {
+                const raw = (cell.textContent || '').trim();
+                if (!raw || raw === '—') return;
+                const dt = new Date(raw);
+                if (Number.isNaN(dt.getTime())) return;
+                cell.textContent = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(dt);
+            });
+
+            // Format transaction date cells in the table to "March 8, 2026"
+            document.querySelectorAll('td.tx-date').forEach(function (cell) {
+                const raw = (cell.textContent || '').trim();
+                if (!raw || raw === '—') return;
+                const dt = new Date(raw);
+                if (Number.isNaN(dt.getTime())) return;
+                cell.textContent = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(dt);
+            });
+        });
+    </script>
+</body>
+</html>
+

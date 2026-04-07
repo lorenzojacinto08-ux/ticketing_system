@@ -714,6 +714,29 @@ aside.sidebar .sidebar-count {
   color: #2563eb;
 }
 
+/* Payment badges */
+.payment-badge {
+  white-space: nowrap;
+}
+
+.payment-badge.payment-paid {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.payment-badge.payment-paid i {
+  color: #059669;
+}
+
+.payment-badge.payment-unpaid {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.payment-badge.payment-unpaid i {
+  color: #d97706;
+}
+
 .ticket-id {
   font-weight: 500;
   color: #1d4ed8;

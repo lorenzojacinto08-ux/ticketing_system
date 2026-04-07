@@ -1,69 +1,454 @@
-2026-02-27 13:27:36,558 [INFO] ticket_created | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15', 'store_name': 'Potato Corner', 'subject': 'Hardware', 'job_order': 'jo-0007', 'assigned_to': 'IT Support', 'status': 'pending'}
-2026-02-27 13:30:04,898 [INFO] ticket_updated | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15', 'ticket_id': 16, 'old_store_name': 'Tim Ho Wan', 'new_store_name': 'Tim Ho Wan', 'old_subject': 'Defective', 'new_subject': 'Defective', 'old_job_order': 'jo-0003', 'new_job_order': 'jo-0003', 'old_status': 'ongoing', 'new_status': 'ongoing', 'old_contact_number': '09222222222', 'new_contact_number': '09222222222', 'old_email': None, 'new_email': None, 'old_assigned_it': 'Technician 1', 'new_assigned_to': 'IT Support'}
-2026-02-27 13:34:58,360 [INFO] user_updated | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15', 'target_user_id': 1, 'new_role': 'end_user', 'is_active': True}
-2026-02-27 13:41:23,836 [INFO] logout | {'user_id': None, 'email': None, 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-02-27 13:41:50,855 [INFO] login_success | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-02-27 13:42:23,293 [INFO] login_success | {'user_id': 4, 'email': 'user1@gmail.com', 'role': 'end_user', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.5.26 Chrome/142.0.7444.265 Electron/39.4.0 Safari/537.36'}
-2026-02-27 13:43:38,010 [INFO] ticket_created | {'user_id': 4, 'email': 'blackscoop@gmail.com', 'role': 'end_user', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Cursor/2.5.26 Chrome/142.0.7444.265 Electron/39.4.0 Safari/537.36', 'ticket_pk': 21, 'store_name': 'Black Scoop', 'subject': 'Hardware', 'job_order': 'jo-0008', 'assigned_to': 'IT Support', 'status': 'pending', 'contact_number': '02933333333'}
-2026-02-27 14:17:45,495 [INFO] user_updated | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15', 'target_user_id': 4, 'new_role': 'admin', 'is_active': True}
-2026-02-27 14:30:10,271 [INFO] logout | {'user_id': None, 'email': None, 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-02-27 14:33:37,075 [INFO] login_success | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-02-27 14:46:34,559 [INFO] logout | {'user_id': None, 'email': None, 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-02-27 14:46:39,074 [INFO] logout | {'user_id': None, 'email': None, 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-02-27 15:07:25,768 [INFO] logout | {'user_id': None, 'email': None, 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-02-27 15:08:01,581 [INFO] login_success | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-02-27 16:35:56,641 [INFO] logout | {'user_id': None, 'email': None, 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-02-27 16:36:08,079 [INFO] login_success | {'user_id': 4, 'email': 'user1@gmail.com', 'role': 'admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-02-27 16:51:36,317 [INFO] ticket_created | {'user_id': 4, 'email': 'Siomai@gmail.com', 'role': 'admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15', 'ticket_pk': 22, 'store_name': 'Siomai House', 'subject': 'Software', 'job_order': 'jo-0009', 'assigned_to': 'IT Support', 'status': 'pending', 'contact_number': '3232323223'}
-2026-02-28 09:45:13,729 [INFO] login_failed | {'user_id': None, 'email': 'super_admin123', 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-02-28 09:45:24,135 [INFO] login_failed | {'user_id': None, 'email': 'super_admin@gmial.com', 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-02-28 09:45:31,665 [INFO] login_success | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-02-28 09:46:32,555 [INFO] ticket_created | {'user_id': 3, 'email': 'yellowcab@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15', 'ticket_pk': 23, 'store_name': 'Yellow Cab', 'subject': 'Unit Replacement', 'job_order': 'jo-0010', 'assigned_to': 'Technician 1', 'status': 'pending', 'contact_number': '09339993333'}
-2026-02-28 09:50:07,071 [INFO] logout | {'user_id': None, 'email': None, 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-02-28 09:51:58,659 [INFO] login_success | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-02-28 16:57:32,649 [INFO] login_success | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-02-28 16:58:41,216 [INFO] ticket_created | {'user_id': 3, 'email': '', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15', 'ticket_pk': 24, 'store_name': 'Llao llao', 'subject': 'Hardware', 'job_order': 'jo-0011', 'assigned_to': 'IT Support', 'status': 'pending', 'contact_number': '09064409887'}
-2026-03-02 08:59:09,481 [INFO] login_success | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 09:09:34,310 [INFO] profile_updated | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15', 'updated_fields': ['names', 'password']}
-2026-03-02 09:09:36,746 [INFO] profile_updated | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15', 'updated_fields': ['names']}
-2026-03-02 09:09:41,494 [INFO] logout | {'user_id': None, 'email': None, 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 09:09:56,377 [INFO] login_success | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 09:26:42,624 [INFO] logout | {'user_id': None, 'email': None, 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 09:26:52,210 [INFO] login_success | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 09:27:11,676 [INFO] profile_updated | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15', 'updated_fields': ['names', 'password']}
-2026-03-02 09:41:43,294 [INFO] ticket_created | {'user_id': 3, 'email': '', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15', 'ticket_pk': 25, 'store_name': 'qdded', 'subject': 'faef', 'job_order': 'jo-0012', 'assigned_to': 'Technician 1', 'status': 'pending', 'contact_number': '90909090'}
-2026-03-02 09:42:06,812 [INFO] profile_updated | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15', 'updated_fields': ['names', 'password']}
-2026-03-02 11:08:36,983 [INFO] logout | {'user_id': None, 'email': None, 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 11:08:47,971 [INFO] login_failed | {'user_id': None, 'email': 'super_admin@gmail.com', 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 11:08:51,309 [INFO] login_failed | {'user_id': None, 'email': 'super_admin@gmail.com', 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 11:08:54,317 [INFO] login_failed | {'user_id': None, 'email': 'super_admin@gmail.com', 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 11:08:57,512 [INFO] login_failed | {'user_id': None, 'email': 'super_admin@gmail.com', 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 11:09:22,424 [INFO] login_failed | {'user_id': None, 'email': 'super_admin@gmail.com', 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 11:09:25,670 [INFO] login_failed | {'user_id': None, 'email': 'super_admin@gmail.com', 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 11:09:29,728 [INFO] login_failed | {'user_id': None, 'email': 'super_admin@gmail.com', 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 11:09:37,504 [INFO] login_failed | {'user_id': None, 'email': 'super_admin@gmail.com', 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 11:09:40,432 [INFO] login_failed | {'user_id': None, 'email': 'super_admin@gmail.com', 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 11:09:42,716 [INFO] login_failed | {'user_id': None, 'email': 'super_admin@gmail.com', 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 11:11:31,375 [INFO] login_failed | {'user_id': None, 'email': 'super_admin@gmail.com', 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 11:11:34,167 [INFO] login_failed | {'user_id': None, 'email': 'super_admin@gmail.com', 'role': None, 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 11:19:28,031 [INFO] login_success | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-02 11:53:13,766 [INFO] login_success | {'user_id': 5, 'email': 'umayamshairamae.s@gmail.com', 'role': 'end_user', 'ip': '192.168.8.94', 'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36'}
-2026-03-02 11:54:39,206 [INFO] logout | {'user_id': None, 'email': None, 'role': None, 'ip': '192.168.8.94', 'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36'}
-2026-03-02 11:54:41,387 [INFO] login_success | {'user_id': 5, 'email': 'umayamshairamae.s@gmail.com', 'role': 'end_user', 'ip': '192.168.8.94', 'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36'}
-2026-03-02 11:55:06,887 [INFO] logout | {'user_id': None, 'email': None, 'role': None, 'ip': '192.168.8.94', 'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36'}
-2026-03-02 13:09:07,266 [INFO] login_success | {'user_id': 6, 'email': 'jdmtadm12@gmail.com', 'role': 'end_user', 'ip': '192.168.8.77', 'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36'}
-2026-03-02 13:10:50,366 [INFO] ticket_updated | {'user_id': 6, 'email': 'jdmtadm12@gmail.com', 'role': 'end_user', 'ip': '192.168.8.77', 'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'ticket_id': 14, 'old_store_name': 'Llao llao', 'new_store_name': 'Llao llao', 'old_subject': 'Hardware', 'new_subject': 'Hardware', 'old_job_order': 'jo-0001', 'new_job_order': 'jo-0001', 'old_status': 'pending', 'new_status': 'completed', 'old_contact_number': None, 'new_contact_number': None, 'old_email': 'llaollao@gmail.com', 'new_email': 'llaollao@gmail.com', 'old_assigned_it': 'IT Support', 'new_assigned_to': 'IT Support'}
-2026-03-02 13:12:08,969 [INFO] tickets_export_all_csv | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-03 11:02:53,107 [INFO] login_success | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15'}
-2026-03-03 11:11:20,734 [INFO] login_success | {'user_id': 7, 'email': 'ljferrer@donbosco.edu.ph', 'role': 'end_user', 'ip': '192.168.8.85', 'ua': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.7.2 Mobile/15E148 Safari/604.1'}
-2026-03-03 11:45:25,439 [INFO] login_success | {'user_id': 8, 'email': 'franciscoseana04@gmail.com', 'role': 'end_user', 'ip': '192.168.8.97', 'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36'}
-2026-03-03 11:46:04,508 [INFO] user_updated | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15', 'target_user_id': 8, 'new_role': 'admin', 'is_active': True}
-2026-03-03 11:46:21,963 [INFO] logout | {'user_id': None, 'email': None, 'role': None, 'ip': '192.168.8.97', 'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36'}
-2026-03-03 11:46:26,072 [INFO] login_success | {'user_id': 8, 'email': 'franciscoseana04@gmail.com', 'role': 'admin', 'ip': '192.168.8.97', 'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36'}
-2026-03-03 11:47:31,669 [INFO] ticket_created | {'user_id': 8, 'email': '', 'role': 'admin', 'ip': '192.168.8.97', 'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'ticket_pk': 26, 'store_name': 'ABC Company', 'subject': 'Hardware', 'job_order': 'jo-0013', 'assigned_to': 'IT Support', 'status': 'pending', 'contact_number': '0908989865'}
-2026-03-03 11:47:59,089 [INFO] ticket_updated | {'user_id': 8, 'email': 'franciscoseana04@gmail.com', 'role': 'admin', 'ip': '192.168.8.97', 'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'ticket_id': 26, 'old_store_name': 'ABC Company', 'new_store_name': 'ABC Company', 'old_subject': 'Hardware', 'new_subject': 'Hardware', 'old_job_order': 'jo-0013', 'new_job_order': 'jo-0013', 'old_status': 'pending', 'new_status': 'completed', 'old_contact_number': '0908989865', 'new_contact_number': '0908989865', 'old_email': None, 'new_email': None, 'old_assigned_it': 'IT Support', 'new_assigned_to': 'IT Support'}
-2026-03-03 13:25:47,736 [INFO] login_success | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '192.168.8.85', 'ua': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.7.2 Mobile/15E148 Safari/604.1'}
-2026-03-03 15:13:47,385 [INFO] login_success | {'user_id': 9, 'email': 'taniegrarj@gmail.com', 'role': 'end_user', 'ip': '192.168.8.99', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36'}
-2026-03-03 16:22:05,893 [INFO] user_updated | {'user_id': 3, 'email': 'super_admin@gmail.com', 'role': 'super_admin', 'ip': '127.0.0.1', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15', 'target_user_id': 9, 'new_role': 'super_admin', 'is_active': True}
-2026-03-03 16:22:52,409 [INFO] logout | {'user_id': None, 'email': None, 'role': None, 'ip': '192.168.8.99', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36'}
-2026-03-03 16:23:00,814 [INFO] login_success | {'user_id': 9, 'email': 'taniegrarj@gmail.com', 'role': 'super_admin', 'ip': '192.168.8.99', 'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36'}
+2026-03-31 15:27:42,708 [INFO] POST request received to add_ticket
+2026-03-31 15:27:42,709 [INFO] Form data: {'name': 'SM Lllao llao', 'contact_number': '0983928383', 'email': '', 'subject': 'harware issue', 'job_order': 'jo-0004', 'assigned_to': '', 'reported_concern': 'it is not working', 'status': 'pending'}
+2026-03-31 15:27:42,709 [INFO] Processed form data: name='SM Lllao llao', subject='harware issue', concern='it is not working...', contact='0983928383', email=''
+2026-03-31 15:27:42,710 [INFO] Field validation: name=True, subject=True, concern=True, contact_or_email=True
+2026-04-01 14:14:40,301 [INFO] POST request received to add_ticket
+2026-04-01 14:14:40,302 [INFO] Form data: {'csv_upload': '1'}
+2026-04-01 14:31:01,769 [INFO] POST request received to add_ticket
+2026-04-01 14:31:01,771 [INFO] Form data: {'csv_upload': '1'}
+2026-04-01 14:41:58,985 [INFO] POST request received to add_ticket
+2026-04-01 14:41:58,987 [INFO] Form data: {'csv_upload': '1'}
+2026-04-01 14:42:10,248 [INFO] POST request received to add_ticket
+2026-04-01 14:42:10,249 [INFO] Form data: {'csv_upload': '1'}
+2026-04-01 14:42:36,398 [INFO] POST request received to add_ticket
+2026-04-01 14:42:36,400 [INFO] Form data: {'csv_upload': '1'}
+2026-04-01 16:20:26,822 [INFO] POST request received to add_ticket
+2026-04-01 16:20:26,825 [INFO] Form data: {'csv_upload': '1'}
+2026-04-01 16:20:50,454 [INFO] POST request received to add_ticket
+2026-04-01 16:20:50,456 [INFO] Form data: {'csv_upload': '1'}
+2026-04-01 16:30:31,276 [INFO] POST request received to add_ticket
+2026-04-01 16:30:31,278 [INFO] Form data: {'csv_upload': '1'}
+ * Serving Flask app 'app'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [03/Apr/2026 23:59:15] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [03/Apr/2026 23:59:15] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [03/Apr/2026 23:59:15] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Apr/2026 23:59:15] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Apr/2026 23:59:15] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Apr/2026 23:59:15] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Apr/2026 23:59:15] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Apr/2026 23:59:15] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Apr/2026 23:59:15] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 00:00:13] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [04/Apr/2026 00:00:13] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:00:13] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:13] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:29] "[32mPOST /login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [04/Apr/2026 00:00:29] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:00:29] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:29] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:32] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:00:32] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:32] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:32] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:32] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:34] "GET /backups HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:00:34] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:34] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:35] "GET /transactions HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:00:35] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:35] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:36] "GET /backups HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:00:36] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:36] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:37] "GET /users HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:00:37] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:37] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:37] "GET /add-ticket HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:00:38] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:38] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:39] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:00:39] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:00:39] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:02:29] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [04/Apr/2026 00:02:29] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 00:02:29] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 00:02:29] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 00:02:29] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:10:23] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:10:23] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:10:23] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:10:23] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:10:23] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:13:16] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:13:16] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:13:16] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:19:31] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:19:32] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:19:32] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:21:19] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:21:19] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:21:19] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:21:21] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:21:21] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:21:21] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:21:22] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:21:22] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:21:22] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:21:23] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:21:23] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:21:23] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:44:00] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 00:44:01] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:44:01] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 00:44:01] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 00:44:01] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 00:44:01] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 01:22:03] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [04/Apr/2026 01:22:03] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 01:22:03] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 01:22:03] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 01:22:03] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 01:22:03] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 01:22:03] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 13:49:36] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [04/Apr/2026 13:49:36] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 13:49:37] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 13:49:37] "[32mGET /transactions HTTP/1.1[0m" 302 -
+127.0.0.1 - - [04/Apr/2026 13:49:37] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 13:49:37] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 13:49:37] "GET /login?next=http://127.0.0.1:5000/transactions HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 13:49:37] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 13:49:37] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 13:49:37] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 13:49:37] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 13:49:37] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 13:49:48] "POST /login HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 13:49:48] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 13:49:48] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 13:49:51] "[32mPOST /login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [04/Apr/2026 13:49:51] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 13:49:51] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 13:49:51] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [04/Apr/2026 13:49:54] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 13:49:54] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 13:49:54] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [04/Apr/2026 13:49:54] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [04/Apr/2026 13:49:54] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 13:50:11] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [04/Apr/2026 13:50:11] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 13:50:11] "GET /static/styles.css HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 13:50:11] "GET /static/images/jdmt-logo.png HTTP/1.1" 200 -
+127.0.0.1 - - [04/Apr/2026 13:50:11] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 09:27:23] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [06/Apr/2026 09:27:23] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:27:23] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:27:23] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:27:23] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 09:27:23] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 09:27:23] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 09:27:39] "[32mPOST /login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [06/Apr/2026 09:27:39] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:27:40] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:27:40] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:27:42] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:27:42] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:27:42] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:27:42] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:27:42] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:27:42] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 09:27:42] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 09:27:42] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 09:27:43] "GET /transactions HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:27:43] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:27:43] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:27:43] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 09:27:43] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 09:27:43] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 09:27:44] "GET /backups HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:27:44] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:27:44] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:27:45] "GET /users HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:27:45] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:27:45] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:27:46] "GET /add-ticket HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:27:47] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:27:47] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:29:08] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [06/Apr/2026 09:29:08] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:29:08] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:29:08] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:29:15] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [06/Apr/2026 09:29:15] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:29:15] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:29:15] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:36:50] "[32mPOST /login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [06/Apr/2026 09:36:50] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:36:50] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:36:50] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:36:53] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:36:53] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:36:53] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:36:53] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:36:53] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:36:53] "GET /transactions HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:36:54] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:36:54] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:36:55] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:36:55] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:36:55] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:36:55] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:36:55] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:36:58] "GET /transactions HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:36:58] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:36:58] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:00] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:37:00] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:00] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:00] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:00] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:02] "GET /transactions HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:37:02] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:02] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:05] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:37:05] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:05] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:05] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:05] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:07] "GET /tickets/6/edit HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:37:07] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:07] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:16] "[32mPOST /tickets/6/edit HTTP/1.1[0m" 302 -
+127.0.0.1 - - [06/Apr/2026 09:37:16] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:37:16] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:16] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:23] "GET /transactions HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:37:23] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:23] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:34] "[32mPOST /transactions/14/payment HTTP/1.1[0m" 302 -
+127.0.0.1 - - [06/Apr/2026 09:37:34] "GET /transactions HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:37:34] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:34] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:38] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:37:38] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:38] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:38] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:38] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:39] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:37:39] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:39] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:40] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:37:40] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:40] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:40] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:40] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:41] "GET /transactions HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:37:41] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:41] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:42] "GET /backups HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:37:42] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:42] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:43] "GET /transactions HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:37:43] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:43] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:44] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 09:37:44] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:44] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:44] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 09:37:44] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 11:43:01] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 11:43:02] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 11:43:02] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 11:43:02] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 11:43:02] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 11:43:02] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 11:43:04] "GET /transactions HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 11:43:04] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 11:43:04] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 11:43:04] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 11:43:04] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 11:43:04] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 11:43:05] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 11:43:05] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 11:43:05] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 11:43:07] "GET /users HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 11:43:07] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 11:43:07] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 11:43:08] "GET /backups HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 11:43:09] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 11:43:09] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 11:48:21] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 11:48:21] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 11:48:21] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 11:48:22] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 11:48:22] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 11:49:27] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 11:49:27] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 11:49:27] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 14:24:33] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 14:24:33] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 14:24:33] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 14:24:34] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 14:24:34] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 14:24:34] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 14:24:48] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 14:24:48] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 14:24:48] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 14:57:33] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 14:57:33] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 14:57:33] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 15:00:49] "GET /add-ticket HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 15:00:50] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 15:00:50] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+[2026-04-06 15:01:13,884] INFO in app: POST request received to add_ticket
+2026-04-06 15:01:13,884 [INFO] POST request received to add_ticket
+[2026-04-06 15:01:13,888] INFO in app: Form data: {'name': 'jabee', 'contact_number': '09673679257', 'email': '', 'subject': 'hardware', 'job_order': 'jo-0005', 'assigned_to': 'JR', 'reported_concern': 'what is this', 'status': 'pending'}
+2026-04-06 15:01:13,888 [INFO] Form data: {'name': 'jabee', 'contact_number': '09673679257', 'email': '', 'subject': 'hardware', 'job_order': 'jo-0005', 'assigned_to': 'JR', 'reported_concern': 'what is this', 'status': 'pending'}
+[2026-04-06 15:01:13,888] INFO in app: Processed form data: name='jabee', subject='hardware', concern='what is this...', contact='09673679257', email=''
+2026-04-06 15:01:13,888 [INFO] Processed form data: name='jabee', subject='hardware', concern='what is this...', contact='09673679257', email=''
+[2026-04-06 15:01:13,888] INFO in app: Field validation: name=True, subject=True, concern=True, contact_or_email=True
+2026-04-06 15:01:13,888 [INFO] Field validation: name=True, subject=True, concern=True, contact_or_email=True
+127.0.0.1 - - [06/Apr/2026 15:01:13] "[32mPOST /add-ticket HTTP/1.1[0m" 302 -
+127.0.0.1 - - [06/Apr/2026 15:01:13] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 15:01:13] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 15:01:13] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 15:25:34] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 15:25:34] "GET /static/styles.css HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 15:25:34] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 15:25:34] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 15:25:34] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 15:25:34] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 15:34:39] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 15:34:39] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 15:34:39] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:02:55] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [06/Apr/2026 20:02:55] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:02:56] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:02:56] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:02:56] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:02:56] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:02:56] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 20:02:56] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 20:02:56] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 20:02:56] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 20:02:56] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 20:02:56] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 20:03:10] "[32mPOST /login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [06/Apr/2026 20:03:10] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:03:10] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:03:10] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:03:41] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:03:41] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:03:41] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:03:41] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:03:41] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:03:41] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 20:03:41] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 20:03:41] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 20:04:20] "GET /tickets/9/edit HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:04:20] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:04:20] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:04:22] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:04:22] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:04:22] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:04:22] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:04:22] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:04:52] "GET /users HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:04:52] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:04:52] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:04:59] "GET /add-ticket HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:05:00] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:05:00] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:05:01] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:05:01] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:05:01] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:05:01] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:05:01] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:06:35] "GET /users HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:06:35] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:06:35] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:06:35] "GET /add-ticket HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:06:35] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:06:35] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:06:36] "GET /users HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:06:36] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:06:36] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:06:37] "GET /backups HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:06:37] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:06:37] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:06:38] "GET /transactions HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:06:38] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:06:38] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:06:38] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 20:06:38] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 20:06:38] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [06/Apr/2026 20:06:38] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:06:38] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:06:38] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:06:38] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:06:38] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:06:39] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:06:39] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:06:39] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:03] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:07:03] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:03] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:03] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:03] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:04] "GET /transactions HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:07:04] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:04] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:05] "GET /backups HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:07:05] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:05] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:06] "GET /users HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:07:06] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:06] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:07] "GET /add-ticket HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:07:07] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:07] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:08] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:07:08] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:08] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:20] "GET /add-ticket HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:07:20] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:20] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:28] "GET /add-ticket HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:07:28] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:28] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:30] "GET /users HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:07:30] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:30] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:30] "GET /add-ticket HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:07:30] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:30] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:32] "GET /users HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:07:32] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:32] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:33] "GET /add-ticket HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:07:33] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:33] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:34] "GET /users HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:07:34] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:34] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:34] "GET /add-ticket HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:07:34] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:34] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:35] "GET /add-ticket HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:07:35] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:35] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:38] "GET /users HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:07:39] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:07:39] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:08:05] "GET /backups HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:08:05] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:08:05] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:08:06] "GET /transactions HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:08:06] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:08:06] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:08:06] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:08:06] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:08:06] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:08:06] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:08:06] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:08:07] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [06/Apr/2026 20:08:07] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [06/Apr/2026 20:08:07] "[36mGET /static/images/jdmt-logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [07/Apr/2026 09:25:39] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [07/Apr/2026 09:25:39] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [07/Apr/2026 09:25:39] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+127.0.0.1 - - [07/Apr/2026 09:25:39] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [07/Apr/2026 09:25:39] "GET /login HTTP/1.1" 200 -
